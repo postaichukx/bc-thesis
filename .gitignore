@@ -1,0 +1,25 @@
+# LaTeX temporary files
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.nav
+*.snm
+*.vrb
+
+# macOS
+.DS_Store
+
+# JetBrains personal files
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/shelf/
