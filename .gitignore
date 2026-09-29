@@ -15,6 +15,15 @@
 *.nav
 *.snm
 *.vrb
+*.glo
+*.gls
+*.ist
+*.loa
+*.lol
+*.pri
+
+# LaTeX build output
+.build/
 
 # macOS
 .DS_Store
