@@ -1,4 +1,6 @@
 \documentclass[bp]{FEIstyle}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
 
 % Author of the thesis
 \FEIauthor{Postaichuk Pavlo}
@@ -32,7 +34,8 @@
 \FEIsupervisor{prof. Ing. Pavol Zajac, PhD.}
 
 
-\FEIglossaries{includes/glossary}
+% TODO: nahradiť ukážkové skratky vlastnými a potom zapnúť slovník.
+%\FEIglossaries{includes/glossary}
 
 %\FEIlistOfGlossaries
 %\FEImanualListOfGlossaries{includes/manual_glossary}
@@ -52,10 +55,12 @@
 \FEIpdfInfo
 \FEIcover
 \FEItitlePage
-\includepdf[pages=-]{includes/assignment.pdf}
-\FEIthanks{includes/thanks}
-\FEIabstract{includes/abstract}
-\FEIabstractEn{includes/abstractEN}
+% TODO: vložiť oficiálne zadanie z AIS namiesto ukážkového PDF.
+%\includepdf[pages=-]{includes/assignment.pdf}
+% TODO: doplniť vlastné abstrakty a prípadné poďakovanie.
+%\FEIthanks{includes/thanks}
+%\FEIabstract{includes/abstract}
+%\FEIabstractEn{includes/abstractEN}
 \FEIcontent
 %\FEIlistOfFiguresAndTables
 
@@ -70,17 +75,17 @@
 %% Automatically generated and sorted list of
 %% abbreviations with hyperlinks from the text.
 %% Edit includes/glossary.tex.
-\FEIlistOfGlossaries
+%\FEIlistOfGlossaries
 %% METHOD 2:
 %% ---------
 %% Manual list -- must be manually filled and sorted,
 %% does not make hyperlinks from the text.
 %% Edit includes/manual_glossary.tex.
-\FEImanualListOfGlossaries{includes/manual_glossary}
+%\FEImanualListOfGlossaries{includes/manual_glossary}
 
 %% Lists of algorithms and listings
-\FEIlistOfAlgorithms
-\FEIlistOfListings
+%\FEIlistOfAlgorithms
+%\FEIlistOfListings
 
 %%%%%%%%%%%%%%%%%
 %%             %%
@@ -91,7 +96,8 @@
 
 \FEIintroduction{includes/introduction}
 \FEIcore{includes/core}
-\FEIconclusion{includes/conclusion}
+% TODO: napísať záver podľa skutočne dosiahnutých výsledkov.
+%\FEIconclusion{includes/conclusion}
 
 %% Uncomment only if the document is writen in english
 %\FEIresume{includes/resume}
@@ -103,7 +109,8 @@
 %%%%%%%%%%%%%%%%%%
 \FEIbibliography
 %% AI Declaration
-\FEIaiDeclaration{includes/ai_declaration}
+% TODO: pravdivo uviesť použitie AI podľa pravidiel STU.
+%\FEIaiDeclaration{includes/ai_declaration}
 
 %%%%%%%%%%%%%%%%%%
 %%              %%
@@ -113,13 +120,13 @@
 \backmatter
 
 %% Attachment A
-\FEIappendix{Algoritmus\label{att:algorithms}}{includes/attachmentA}
+%\FEIappendix{Algoritmus\label{att:algorithms}}{includes/attachmentA}
 
 %% Attachment B
-\FEIappendix{Výpis dlhého kódu\label{att:listings}}{includes/attachmentB}
+%\FEIappendix{Výpis dlhého kódu\label{att:listings}}{includes/attachmentB}
 
 %% Attachment C
-\FEIappendix{Slovníček pojmov\label{att:dictionary}}{includes/attachmentC}
+%\FEIappendix{Slovníček pojmov\label{att:dictionary}}{includes/attachmentC}
 
 %% Attachement D
 %\FEIappendix{Súborová štruktúra projektu\label{att:files}}{includes/attachmentD}

@@ -13,5 +13,5 @@ sub run_makeglossaries {
 
   my $ret = system "makeglossaries $opt $base_name";  
   popd;
-  return ret;
+  return $ret;
 }
