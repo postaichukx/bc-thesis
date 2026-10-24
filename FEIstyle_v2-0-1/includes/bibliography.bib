@@ -1,52 +1,133 @@
 
-% Zdroje použité v kapitole Základné pojmy.
-@online{bitcoinDevGlossary,
+% Zdroje použité v práci.
+@online{bitcoinFaq,
   author  = {{Bitcoin.org}},
-  title   = {Bitcoin Developer Glossary},
-  url     = {https://developer.bitcoin.org/glossary.html},
-  urldate = {2026-10-06},
+  title   = {Frequently Asked Questions},
+  url     = {https://bitcoin.org/en/faq},
+  urldate = {2026-10-15},
 }
 
-@online{bitcoinDevBlockChain,
-  author  = {{Bitcoin.org}},
-  title   = {Bitcoin Developer Guide: Block Chain},
-  url     = {https://developer.bitcoin.org/devguide/block_chain.html},
-  urldate = {2026-10-06},
+@online{trezorBlockbook,
+  author = {{Trezor}},
+  title = {Blockbook},
+  url = {https://github.com/trezor/blockbook},
+  urldate = {2026-10-13},
 }
 
-@online{bitcoinDevBlockReference,
-  author  = {{Bitcoin.org}},
-  title   = {Bitcoin Developer Reference: Block Chain},
-  url     = {https://developer.bitcoin.org/reference/block_chain.html},
-  urldate = {2026-10-06},
+@online{bip141,
+  author = {Lombrozo, Eric and Lau, Johnson and Wuille, Pieter},
+  title = {BIP 141: Segregated Witness (Consensus layer)},
+  url = {https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki},
+  urldate = {2026-10-13},
 }
 
-@online{bitcoinDevTransactions,
-  author  = {{Bitcoin.org}},
-  title   = {Bitcoin Developer Guide: Transactions},
-  url     = {https://developer.bitcoin.org/devguide/transactions.html},
-  urldate = {2026-10-06},
+@online{bip78,
+  author  = {Dorier, Nicolas},
+  title   = {BIP 78: A Simple Payjoin Proposal},
+  url     = {https://github.com/bitcoin/bips/blob/master/bip-0078.mediawiki},
+  urldate = {2026-10-15},
 }
 
-@online{bitcoinDevWallets,
-  author  = {{Bitcoin.org}},
-  title   = {Bitcoin Developer Guide: Wallets},
-  url     = {https://developer.bitcoin.org/devguide/wallets.html},
-  urldate = {2026-10-06},
+@report{fatf2020redflags,
+  author      = {{Financial Action Task Force}},
+  title       = {Virtual Assets: Red Flag Indicators of Money Laundering and Terrorist Financing},
+  institution = {FATF},
+  location    = {Paris},
+  date        = {2020-09},
+  url         = {https://www.fatf-gafi.org/content/dam/fatf-gafi/reports/Virtual-Assets-Red-Flag-Indicators.pdf},
+  urldate     = {2026-10-17},
 }
 
-@online{bitcoinDevMining,
-  author  = {{Bitcoin.org}},
-  title   = {Bitcoin Developer Guide: Mining},
-  url     = {https://developer.bitcoin.org/devguide/mining.html},
-  urldate = {2026-10-06},
+@report{europol2022crypto,
+  author      = {{Europol}},
+  title       = {Cryptocurrencies: Tracing the Evolution of Criminal Finances},
+  series      = {Europol Spotlight Report},
+  institution = {Publications Office of the European Union},
+  location    = {Luxembourg},
+  date        = {2022},
+  url         = {https://www.europol.europa.eu/publications-events/publications/cryptocurrencies-tracing-evolution-of-criminal-finances},
+  urldate     = {2026-10-17},
 }
 
-@online{bitcoinDevP2P,
+@inproceedings{ruffing2014coinshuffle,
+  author    = {Ruffing, Tim and Moreno-Sanchez, Pedro and Kate, Aniket},
+  title     = {CoinShuffle: Practical Decentralized Coin Mixing for Bitcoin},
+  booktitle = {Computer Security -- ESORICS 2014},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {8713},
+  pages     = {345--364},
+  publisher = {Springer},
+  date      = {2014},
+  doi       = {10.1007/978-3-319-11212-1_20},
+}
+
+@inproceedings{stutz2022coinjoin,
+  author    = {Stütz, Rainer and Stockinger, Johann and Moreno-Sanchez, Pedro and Haslhofer, Bernhard and Maffei, Matteo},
+  title     = {Adoption and Actual Privacy of Decentralized CoinJoin Implementations in Bitcoin},
+  booktitle = {Proceedings of the 4th ACM Conference on Advances in Financial Technologies},
+  pages     = {254--267},
+  publisher = {Association for Computing Machinery},
+  date      = {2022},
+  doi       = {10.1145/3558535.3559782},
+}
+
+@online{fbiCryptoInvestmentFraud,
+  author  = {{Federal Bureau of Investigation}},
+  title   = {Cryptocurrency Investment Fraud},
+  url     = {https://www.fbi.gov/how-we-can-help-you/victim-services/national-crimes-and-victim-resources/cryptocurrency-investment-fraud},
+  urldate = {2026-10-17},
+}
+
+@inproceedings{bartoletti2018ponzi,
+  author    = {Bartoletti, Massimo and Pes, Barbara and Serusi, Sergio},
+  title     = {Data Mining for Detecting Bitcoin Ponzi Schemes},
+  booktitle = {2018 Crypto Valley Conference on Blockchain Technology},
+  publisher = {IEEE},
+  date      = {2018},
+  eprint    = {1803.00646},
+  eprinttype = {arxiv},
+}
+
+@online{bitcoinScams,
   author  = {{Bitcoin.org}},
-  title   = {Bitcoin Developer Guide: P2P Network},
-  url     = {https://developer.bitcoin.org/devguide/p2p_network.html},
-  urldate = {2026-10-06},
+  title   = {Avoid Scams},
+  url     = {https://bitcoin.org/en/scams},
+  urldate = {2026-10-17},
+}
+
+@inproceedings{kappos2022peel,
+  author    = {Kappos, George and Yousaf, Haaroon and Stütz, Rainer and Rollet, Sofia and Haslhofer, Bernhard and Meiklejohn, Sarah},
+  title     = {How to Peel a Million: Validating and Expanding Bitcoin Clusters},
+  booktitle = {31st USENIX Security Symposium},
+  publisher = {USENIX Association},
+  date      = {2022},
+  pages     = {2207--2223},
+  url       = {https://www.usenix.org/conference/usenixsecurity22/presentation/kappos},
+  urldate   = {2026-10-17},
+}
+
+@online{doj2026helix,
+  author  = {{U.S. Department of Justice}},
+  title   = {U.S. Obtains Legal Title to \$400 Million in Assets Tied to Helix Cryptocurrency Mixer},
+  date    = {2026-01-29},
+  url     = {https://www.justice.gov/usao-dc/pr/us-obtains-legal-title-400-million-assets-tied-helix-cryptocurrency-mixer},
+  urldate = {2026-10-17},
+}
+
+@online{teleportCoinSwap,
+  author  = {{Bitcoin Teleport}},
+  title   = {Teleport Transactions: CoinSwap Implementation},
+  url     = {https://github.com/bitcoin-teleport/teleport-transactions},
+  urldate = {2026-10-17},
+}
+
+@online{bitcoinDevDocumentation,
+  ids     = {bitcoinDevGlossary, bitcoinDevBlockChain, bitcoinDevBlockReference, bitcoinDevTransactions, bitcoinDevWallets, bitcoinDevMining, bitcoinDevP2P},
+  author  = {{Bitcoin.org}},
+  title   = {Bitcoin Developer Documentation},
+  note    = {Použité časti: Developer Guide a Developer Reference, najmä témy Block Chain, Transactions, Wallets, Mining a P2P Network},
+  url     = {https://developer.bitcoin.org/},
+  urldate = {2026-10-20},
 }
 
 @online{nakamoto2008bitcoin,
@@ -73,6 +154,24 @@
   doi    = {10.48550/arXiv.1908.02591},
 }
 
+@article{elmougy2023ellipticpp,
+  author     = {Elmougy, Youssef and Liu, Ling},
+  title      = {Demystifying Fraudulent Transactions and Illicit Nodes in the {Bitcoin} Network for Financial Forensics},
+  date       = {2023},
+  eprint     = {2306.06108},
+  eprinttype = {arxiv},
+  doi        = {10.48550/arXiv.2306.06108},
+}
+
+@article{bellei2024elliptic2,
+  author     = {Bellei, Claudio and Xu, Muhua and Phillips, Ross and Robinson, Tom and Weber, Mark and Kaler, Tim and Leiserson, Charles E. and {Arvind} and Chen, Jie},
+  title      = {The Shape of Money Laundering: Subgraph Representation Learning on the Blockchain with the {Elliptic2} Dataset},
+  date       = {2024},
+  eprint     = {2404.19109},
+  eprinttype = {arxiv},
+  doi        = {10.48550/arXiv.2404.19109},
+}
+
 @article{meiklejohn2016fistful,
   author  = {Meiklejohn, Sarah and Pomarole, Marjori and Jordan, Grant and Levchenko, Kirill and McCoy, Damon and Voelker, Geoffrey M. and Savage, Stefan},
   title   = {A Fistful of Bitcoins: Characterizing Payments among Men with No Names},
@@ -91,8 +190,114 @@
   date    = {2026},
   volume  = {57},
   number  = {1},
-  pages   = {302124--302131},
+  pages   = {302124},
   doi     = {10.1016/j.fsidi.2026.302124},
+}
+
+@online{mempoolFaq,
+  author  = {{mempool.space}},
+  title   = {Frequently Asked Questions},
+  url     = {https://mempool.space/docs/faq},
+  urldate = {2026-10-11},
+}
+
+@online{blockchainExplorer,
+  author  = {{Blockchain.com}},
+  title   = {Blockchain.com Explorer},
+  url     = {https://www.blockchain.com/explorer},
+  urldate = {2026-10-11},
+}
+
+@article{gomez2026pollution,
+  author  = {Gomez, Gibran and van Liebergen, Kevin and Sanvito, Davide and Siracusano, Giuseppe and Gonzalez, Roberto and Caballero, Juan},
+  title   = {Clean Up the Mess: Addressing Data Pollution in Cryptocurrency Abuse Reporting Services},
+  journal = {Future Generation Computer Systems},
+  date    = {2026},
+  volume  = {179},
+  pages   = {108313},
+  doi     = {10.1016/j.future.2025.108313},
+}
+
+@online{ellipticMapping,
+  author  = {Benzik, Alex},
+  title   = {Deanonymized 99.5 Percent of Elliptic Transactions},
+  date    = {2019},
+  url     = {https://www.kaggle.com/datasets/alexbenzik/deanonymized-995-pct-of-elliptic-transactions},
+  urldate = {2026-10-11},
+}
+
+@online{deanonymizedFeatures,
+  author  = {Šafář, Miroslav and Pluskal, Jan and Veselý, Vladimír and Ryšavý, Ondřej},
+  title   = {Deanonymized Elliptic Transaction Features},
+  date    = {2026},
+  url     = {https://github.com/nesfit/DeanonymizedEllipticBitcoinDataset},
+  urldate = {2026-10-11},
+}
+
+@online{bitcoinSubgraphBuilder,
+  author  = {Šafář, Miroslav and Pluskal, Jan and Veselý, Vladimír and Ryšavý, Ondřej},
+  title   = {BitcoinTxSubgraphBuilder},
+  date    = {2026},
+  url     = {https://github.com/nesfit/BitcoinTxSubgraphBuilder},
+  urldate = {2026-10-12},
+  note    = {Analyzovaná revízia 8e01503c0f9f},
+}
+
+@article{hu2020ogb,
+  author     = {Hu, Weihua and Fey, Matthias and Zitnik, Marinka and Dong, Yuxiao and Ren, Hongyu and Liu, Bowen and Catasta, Michele and Leskovec, Jure},
+  title      = {Open Graph Benchmark: Datasets for Machine Learning on Graphs},
+  journal    = {Advances in Neural Information Processing Systems},
+  date       = {2020},
+  volume     = {33},
+  pages      = {22118--22133},
+  eprint     = {2005.00687},
+  eprinttype = {arxiv},
+}
+
+@online{blockbook,
+  author  = {{Trezor}},
+  title   = {Blockbook: Blockchain Indexer and API},
+  url     = {https://github.com/trezor/blockbook},
+  urldate = {2026-10-11},
+}
+
+@article{kaufman2012leakage,
+  author  = {Kaufman, Shachar and Rosset, Saharon and Perlich, Claudia and Stitelman, Ori},
+  title   = {Leakage in Data Mining: Formulation, Detection, and Avoidance},
+  journal = {ACM Transactions on Knowledge Discovery from Data},
+  date    = {2012},
+  volume  = {6},
+  number  = {4},
+  doi     = {10.1145/2382577.2382579},
+}
+
+@article{kapoor2023leakage,
+  author  = {Kapoor, Sayash and Narayanan, Arvind},
+  title   = {Leakage and the Reproducibility Crisis in Machine-Learning-Based Science},
+  journal = {Patterns},
+  date    = {2023},
+  volume  = {4},
+  number  = {9},
+  pages   = {100804},
+  doi     = {10.1016/j.patter.2023.100804},
+}
+
+@article{breiman2001random,
+  author  = {Breiman, Leo},
+  title   = {Random Forests},
+  journal = {Machine Learning},
+  date    = {2001},
+  volume  = {45},
+  pages   = {5--32},
+  doi     = {10.1023/A:1010933404324},
+}
+
+@inproceedings{kipf2017gcn,
+  author    = {Kipf, Thomas N. and Welling, Max},
+  title     = {Semi-Supervised Classification with Graph Convolutional Networks},
+  booktitle = {International Conference on Learning Representations},
+  date      = {2017},
+  doi       = {10.48550/arXiv.1609.02907},
 }
 
 %ZÁKONY A VYHLÁŠKY

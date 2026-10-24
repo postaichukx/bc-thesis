@@ -1,0 +1,597 @@
+\section{Návrh reprodukovateľného experimentu}
+\label{sec:methodology}
+
+Experiment je navrhnutý tak, aby bolo možné oddelene skontrolovať
+každý krok: výber záznamov, získanie verejnej transakcie, výpočet
+príznakov, vytvorenie grafu, rozdelenie dát a trénovanie modelu.
+Zdrojový kód sa nachádza v adresári \texttt{analysis/} a poskytuje
+príkazy \texttt{prepare}, \texttt{collect}, \texttt{mapping-eval},
+\texttt{build-datasets}, \texttt{train} a \texttt{report}.
+
+\subsection{Dátový tok}
+
+Obrázok~\ref{fig:pipeline} ukazuje celý postup. Pôvodné súbory Elliptic
+a verejné mapovanie sa najprv obmedzia na vybrané časové kroky. Klient
+Blockbook potom získa verejné transakcie a uloží každú úspešnú odpoveď
+do databázy SQLite. Z odpovedí sa vypočítajú vysvetliteľné príznaky a
+hrany. Posledné dve fázy vytvoria modelové varianty a súhrnné tabuľky
+a grafy.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{\textwidth}{!}{%
+  \begin{tikzpicture}[
+      >=Latex,
+      node distance=7mm,
+      every node/.style={font=\small,align=center},
+      processbox/.style={draw,rounded corners,minimum width=47mm,minimum height=9mm},
+      data/.style={processbox,fill=blue!8},
+      action/.style={processbox,fill=orange!12}
+    ]
+    \node[data] (elliptic) {Elliptic + verejné mapovanie};
+    \node[action,below=of elliptic] (prepare) {\texttt{prepare}: výber 6 časových krokov};
+    \node[action,below=of prepare] (collect) {\texttt{collect}: Blockbook + pamäť SQLite};
+    \node[action,below=of collect] (features) {výpočet 18 lokálnych príznakov a hrán};
+    \node[action,below left=8mm and 6mm of features] (mapping) {\texttt{mapping-eval}\\skrytých 20~\%};
+    \node[action,below right=8mm and 6mm of features] (datasets) {\texttt{build-datasets}\\3 varianty, 2 rozdelenia};
+    \node[action,below=18mm of features] (train) {\texttt{train}: LR + RF + GCN};
+    \node[data,below=of train] (summary) {\texttt{report}: tabuľky, grafy, manifest};
+    \draw[->] (elliptic) -- (prepare);
+    \draw[->] (prepare) -- (collect);
+    \draw[->] (collect) -- (features);
+    \draw[->] (features) -- (mapping);
+    \draw[->] (features) -- (datasets);
+    \draw[->] (datasets) -- (train);
+    \draw[->] (mapping.south) -- (summary.west);
+    \draw[->] (train) -- (summary);
+  \end{tikzpicture}
+  }
+  \caption{Dátový tok experimentu. Vlastné spracovanie.}
+  \label{fig:pipeline}
+\end{figure}
+
+Každý beh vytvorí manifest s cestami a kryptografickými odtlačkami
+vstupov, verziou Pythonu a knižníc, počtami záznamov, vybranými krokmi,
+rozsahmi blokov a počiatočnou hodnotou generátora náhodných čísel
+(angl. \emph{seed}). Surové súbory, mapovanie, vyrovnávacia pamäť API
+a odvodený dátový súbor sa neukladajú do systému Git. Dôvodom je veľkosť
+údajov aj licencia CC BY-NC-ND 4.0, ktorá obmedzuje ďalšie šírenie
+upravených verzií Elliptic \cite{safar2026elliptic,ellipticDataset}.
+
+Tabuľka~\ref{tab:own-pipeline-commands} spresňuje, čo každý príkaz
+načíta a čo po sebe zanechá. Takéto oddelenie umožňuje zopakovať iba
+zlyhaný krok a súčasne skontrolovať jeho medzivýsledok.
+
+\begin{table}[p]
+  \centering
+  \small
+  \caption{Príkazy vlastného experimentálneho postupu. Vlastné spracovanie.}
+  \label{tab:own-pipeline-commands}
+  \begin{tabularx}{\textwidth}{lXX}
+    \toprule
+    Príkaz & Čo vykoná & Kontrolovateľný výstup \\
+    \midrule
+    \texttt{prepare} & načíta tri súbory Elliptic a verejné mapovanie,
+      vyberie šesť krokov a overí identifikátory & vybrané príznaky,
+      triedy, hrany, mapovanie a manifest \\
+    \texttt{collect} & určí bloky vybraných krokov a cez Blockbook
+      načíta všetky kandidátske transakcie & SQLite cache a tabuľka
+      transakcií s 18 vypočítanými hodnotami \\
+    \texttt{mapping-eval} & skryje 20~\% známych zhôd v každom kroku,
+      kalibruje porovnanie iba na zostávajúcich 80~\% & top-1, top-5,
+      nejednoznačné a nenájdené prípady \\
+    \texttt{build-datasets} & vytvorí tri kombinácie príznakov a grafu,
+      časové a adresne oddelené rozdelenie & vrcholy, dve sady hrán a
+      masky tréningu, validácie a testu \\
+    \texttt{train} & normalizuje podľa tréningu, vyberie hyperparametre
+      na validácii a vyhodnotí tri modely & každý beh, metriky, prah a
+      agregovaný priemer so smerodajnou odchýlkou \\
+    \texttt{report} & číta uložené výsledky bez nového učenia
+      & grafy PDF/PNG použité v práci \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Výber časových krokov}
+
+Výber obsahuje dva trénovacie, dva validačné a dva testovacie časové
+kroky. Umožňuje zopakovať celý postup na 28~221 vrcholoch bez potreby
+spracovať všetkých 203~769 transakcií. Konkrétne počty uvádza
+tabuľka~\ref{tab:selected-steps}.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Vybrané časové kroky a rozdelenie experimentu. Vlastné
+  spracovanie z pôvodných súborov Elliptic.}
+  \label{tab:selected-steps}
+  \begin{tabular}{lrrrrr}
+    \toprule
+    Časový krok & Časť & Všetky & Licitné & Ilicitné & Neoznačené \\
+    \midrule
+    20 & tréning & 4~291 & 640 & 260 & 3~391 \\
+    29 & tréning & 4~275 & 845 & 329 & 3~101 \\
+    30 & validácia & 2~483 & 441 & 83 & 1~959 \\
+    32 & validácia & 4~525 & 981 & 342 & 3~202 \\
+    35 & test & 5~507 & 1~159 & 182 & 4~166 \\
+    42 & test & 7~140 & 1~915 & 239 & 4~986 \\
+    \midrule
+    Spolu & & 28~221 & 5~981 & 1~435 & 20~805 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Na obrázku~\ref{fig:selected-split-timeline} je základnou jednotkou
+rozdelenia celý časový krok. Vrcholy v rámci kroku sa náhodne nedelia.
+Kroky 20 a 29 sú
+jediné dáta, z ktorých model upravuje svoje parametre. Kroky 30 a 32
+slúžia na výber nastavení a rozhodovacieho prahu. Kroky 35 a 42 sa
+použijú až pri konečnom meraní. Medzery medzi číslami pripomínajú, že
+výber nepokrýva súvislé obdobie blockchainu.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{\textwidth}{!}{%
+  \begin{tikzpicture}[
+      >=Latex,
+      every node/.style={font=\small,align=center},
+      cell/.style={draw,rounded corners,minimum width=23mm,minimum height=14mm}
+    ]
+    \node[cell,fill=blue!12] (s20) at (0,0) {krok 20\\4~291};
+    \node[cell,fill=blue!12] (s29) at (2.7,0) {krok 29\\4~275};
+    \node[cell,fill=yellow!20] (s30) at (5.4,0) {krok 30\\2~483};
+    \node[cell,fill=yellow!20] (s32) at (8.1,0) {krok 32\\4~525};
+    \node[cell,fill=orange!18] (s35) at (10.8,0) {krok 35\\5~507};
+    \node[cell,fill=orange!18] (s42) at (13.5,0) {krok 42\\7~140};
+    \draw[->,thick] (-1.4,-1.1) -- (14.9,-1.1) node[right]{čas};
+    \draw[decorate,decoration={brace,amplitude=5pt,mirror}]
+      (-1.1,0.95) -- (3.8,0.95) node[midway,yshift=9mm]{tréning};
+    \draw[decorate,decoration={brace,amplitude=5pt,mirror}]
+      (4.3,0.95) -- (9.2,0.95) node[midway,yshift=9mm]{validácia};
+    \draw[decorate,decoration={brace,amplitude=5pt,mirror}]
+      (9.7,0.95) -- (14.6,0.95) node[midway,yshift=9mm]{test};
+  \end{tikzpicture}%
+  }
+  \caption{Časové rozdelenie 28~221 vybraných vrcholov. Číslo pod
+  krokom udáva počet všetkých transakcií v danom kroku. Vlastné
+  spracovanie z Elliptic.}
+  \label{fig:selected-split-timeline}
+\end{figure}
+
+Verejné mapovanie obsahuje 28~152 z vybraných 28~221 identifikátorov,
+teda 99,76~\% tejto vzorky. Zvyšných 69 záznamov nemá potvrdené
+mapovanie. Program pre ne vypíše kandidátov s mierou nejednoznačnosti a
+priradí im stav \texttt{candidate\_only}.
+
+\subsection{Zber údajov cez Blockbook}
+
+Blockbook je indexer blockchainu s rozhraním REST. Pre jednu transakciu
+vracia okrem \texttt{txid} aj výšku a čas bloku, hodnotu, poplatok,
+veľkosť, vstupy a výstupy. Hodnoty sú vyjadrené v najmenšej jednotke
+daného blockchainu, pri Bitcoine v satoshi \cite{blockbook}.
+
+Klient používa vlastnú hlavičku \texttt{User-Agent}, časový limit a
+exponenciálne predlžovanie prestávky medzi opakovanými pokusmi. Najviac
+štyri pracovníky odosielajú požiadavky súbežne, aby sa verejný server
+nepreťažoval. Každá odpoveď s kódom 200 sa uloží do SQLite podľa úplnej
+adresy požiadavky. Pri opakovanom behu sa teda číta z vyrovnávacej
+pamäte a zber môže
+pokračovať po prerušení.
+
+Pre vyhodnotenie párovania program prejde všetky transakcie v blokoch
+priradených ku konkrétnemu časovému
+kroku. Tým vytvorí množinu kandidátov, v ktorej musí algoritmus nájsť
+správny verejný \texttt{txid} bez použitia skrytej odpovede.
+
+\subsection{Transparentné lokálne príznaky}
+
+Z jednej odpovede Blockbook sa počíta 18 príznakov so známym významom.
+Príznak je číselná hodnota, ktorou sa transakcia opíše modelu.
+Samostatné číslo neurčuje triedu; model hľadá kombinácie viacerých
+čísel. Tabuľka~\ref{tab:transparent-features} uvádza všetkých 18
+hodnôt, ich jednotku a význam.
+
+\begin{table}[p]
+  \centering
+  \scriptsize
+  \caption{Transparentne vypočítané lokálne príznaky.}
+  \label{tab:transparent-features}
+  \begin{tabularx}{\textwidth}{r l l X}
+    \toprule
+    Č. & Príznak & Jednotka & Čo model dostane \\
+    \midrule
+    2 & objem & satoshi & súčet všetkých výstupov transakcie \\
+    3 & poplatok & satoshi & vstupná hodnota mínus výstupná hodnota \\
+    5 & počet vstupov & počet & koľko starších výstupov sa míňa \\
+    6 & počet výstupov & počet & koľko nových výstupov vzniká \\
+    7 & jedinečné vstupné adresy & počet & počet rôznych neprázdnych adries vo vstupoch \\
+    9 & minimum vstupov & satoshi & najmenší vstup \\
+    10 & maximum vstupov & satoshi & najväčší vstup \\
+    11 & odchýlka vstupov & satoshi & rozdielnosť veľkostí vstupov \\
+    12 & priemer vstupov & satoshi & priemerná hodnota jedného vstupu \\
+    13 & Pearson vstupov & $[-1,1]$ & lineárny trend hodnôt podľa indexu \\
+    14 & Spearman vstupov & $[-1,1]$ & rast alebo pokles poradia hodnôt \\
+    15 & jedinečné výstupné adresy & počet & počet rôznych neprázdnych adries vo výstupoch \\
+    17 & minimum výstupov & satoshi & najmenší výstup \\
+    18 & maximum výstupov & satoshi & najväčší výstup \\
+    19 & odchýlka výstupov & satoshi & rozdielnosť veľkostí výstupov \\
+    20 & priemer výstupov & satoshi & priemerná hodnota jedného výstupu \\
+    21 & Pearson výstupov & $[-1,1]$ & lineárny trend hodnôt podľa indexu \\
+    22 & Spearman výstupov & $[-1,1]$ & rast alebo pokles poradia hodnôt \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Pri príklade z obrázka~\ref{fig:utxo-example} by počet vstupov bol 2,
+počet výstupov 2, minimum vstupov 0,4 BTC, maximum vstupov 0,6 BTC,
+priemer vstupov 0,5 BTC a poplatok 0,01 BTC. Počet jedinečných adries
+sa môže od počtu vstupov líšiť, pretože jedna adresa sa môže objaviť
+viackrát. Program najprv vytvorí množinu adries a až potom ju spočíta.
+
+Pri prázdnej postupnosti, napríklad pri vstupoch coinbase transakcie,
+sa agregačná hodnota nastaví na nulu. Smerodajná odchýlka jednej
+hodnoty a korelácia konštantnej postupnosti sú tiež nula. Toto pravidlo
+je súčasťou implementácie a testov, pretože matematická korelácia v
+takých prípadoch nie je určená.
+
+\subsection{Kontrolovaný experiment párovania}
+
+Verejné mapovanie už obsahuje známe odpovede. Presnosť metódy sa preto
+meria po skrytí 20~\% známych dvojíc v každom zo šiestich časových
+krokov pomocou \texttt{seed=42}. Zvyšných 80~\% slúži na
+odhad lineárneho prevodu medzi normalizovaným príznakom Elliptic a
+hodnotou vypočítanou z blockchainu:
+\begin{equation}
+  \hat{x}=a z+b.
+\end{equation}
+Koeficienty $a$ a $b$ sa určia metódou najmenších štvorcov. Skryté
+\texttt{txid} sa nepoužijú pri odhade ani pri tvorbe kandidátov.
+
+Vyhľadávanie sa hodnotí v troch stupňoch:
+\begin{enumerate}
+  \item iba počet vstupov a výstupov;
+  \item počty doplnené o objem, poplatok a počty jedinečných adries;
+  \item všetkých 18 obnovených lokálnych príznakov.
+\end{enumerate}
+Najprv sa kandidáti zúžia na rovnaký počet vstupov a výstupov. Potom
+sa zoradia podľa priemernej normalizovanej absolútnej odchýlky ostatných
+príznakov. Zaznamenáva sa úspešnosť top-1 a top-5, počet kandidátov,
+chýbajúce výsledky a prípady, keď dvaja kandidáti dosiahnu rovnaké
+skóre. Takéto prípady sa označia ako nejednoznačné.
+
+\subsection{Varianty dát a grafu}
+
+Experiment porovnáva tri varianty:
+\begin{enumerate}[label=\Alph*.]
+  \item pôvodné anonymizované príznaky a pôvodný graf Elliptic;
+  \item transparentné lokálne príznaky a pôvodný graf Elliptic;
+  \item transparentné lokálne príznaky a graf rekonštruovaný z odkazov
+  vstupov na staršie \texttt{txid}.
+\end{enumerate}
+
+Variant B oddeľuje vplyv príznakov, kým rozdiel medzi B a C oddeľuje
+vplyv grafu. Logistická regresia a náhodný les graf nepoužívajú, preto
+pri nich varianty B a C slúžia ako kontrola a musia pri rovnakej
+počiatočnej hodnote
+poskytnúť rovnaký výsledok. Pri GCN sa graf priamo podieľa na výpočte
+reprezentácie vrcholu.
+
+Podobný dôraz na vopred určené rozdelenia, spoločný formát vstupu a
+jednotný hodnotiaci postup používa aj Open Graph Benchmark. Jeho
+autori zdôrazňujú, že rozdelenie má napodobniť konkrétne budúce
+použitie modelu. Náhodné percentá riadkov túto požiadavku nespĺňajú
+\cite{hu2020ogb}. Pre túto prácu z toho vyplýva, že názov algoritmu bez
+opisu času, grafových hrán a spoločných adries nestačí na porovnanie.
+
+\subsection{Časové rozdelenie a rozdelenie odolné voči úniku informácií}
+
+Bežné časové rozdelenie priradí celé kroky 20 a 29 do tréningu, kroky
+30 a 32 do validácie a kroky 35 a 42 do testu. Tým sa do rôznych častí
+náhodne nerozdelia vrcholy jedného časového komponentu Elliptic. Adresa
+\texttt{A} sa napriek tomu môže objaviť v trénovacej
+transakcii a znova v testovacej transakcii. Model potom môže využiť
+opakovanú entitu.
+
+Druhé rozdelenie sa tvorí postupne zľava doprava. Najprv sa prijmú
+trénovacie transakcie a zapamätajú sa všetky ich vstupné a výstupné
+adresy. Validačná transakcia sa prijme iba vtedy, keď nepoužíva žiadnu
+zapamätanú adresu. Jej adresy sa potom tiež zapamätajú. Rovnaké pravidlo
+sa nakoniec použije na test. Tento postup zachováva opakovania adresy
+v rámci jednej časti a vylúči jej výskyt v neskoršej časti.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      >=Latex,
+      node distance=7mm,
+      every node/.style={font=\small,align=center},
+      box/.style={draw,rounded corners,minimum width=40mm,minimum height=11mm}
+    ]
+    \node[box,fill=blue!12] (train) {tréning\\ulož adresy $\{A,B\}$};
+    \node[box,right=of train,fill=yellow!20] (val) {validácia\\odstráň riadok s $A$};
+    \node[box,right=of val,fill=orange!18] (test) {test\\odstráň riadok s $A,B$};
+    \draw[->] (train) -- node[above,font=\scriptsize]{zakázané v ďalšej časti} (val);
+    \draw[->] (val) -- node[above,font=\scriptsize]{rozšírený zoznam} (test);
+    \node[box,below=12mm of val,fill=gray!10,minimum width=48mm]
+      (edges) {nakoniec odstráň hrany\\medzi rozdielnymi časťami};
+    \draw[->] (train.south) -- (edges.west);
+    \draw[->] (val.south) -- (edges.north);
+    \draw[->] (test.south) -- (edges.east);
+  \end{tikzpicture}
+  \caption{Tvorba rozdelenia bez pozorovateľného prekryvu adries.
+  Písmená $A$ a $B$ sú ilustračné adresy. Vlastné spracovanie.}
+  \label{fig:clean-split-process}
+\end{figure}
+
+Po filtrovaní vrcholov sa odstránia aj všetky hrany, ktorých konce
+patria do rozdielnych častí. GCN preto nemôže preniesť informáciu z
+trénovacieho vrcholu do validačného alebo testovacieho vrcholu.
+Transakcie bez overeného verejného mapovania sa do tohto rozdelenia
+nezaradia, pretože pri nich nemožno spoľahlivo skontrolovať adresy.
+Počty vyradených vrcholov sa uvádzajú spolu s výsledkami; metrika po
+filtrovaní totiž vzniká na menšej a odlišnej vzorke.
+
+Pri variante A zostáva časový únik ukrytý v pôvodných adresných
+príznakoch 23--94. Rozdelenie odstraňuje pozorovateľný prekryv adries a
+hrán medzi časťami. Informácia z budúcnosti už zapísaná v jednom
+vektore zostáva zachovaná. Transparentné varianty B a C tieto globálne
+adresné príznaky nepoužívajú.
+
+\subsection{Modely a hyperparametre}
+
+Experiment používa tri referenčné algoritmy ako kontrolné body:
+lineárny model, nelineárny tabuľkový model a model využívajúci graf.
+Práca nepripisuje týmto algoritmom vlastný metodický prínos. Ak bude v
+ďalšej verzii práce vytvorený vlastný
+klasifikátor, musí sa porovnať na rovnakých vstupoch, rozdeleniach a
+metrikách. Číslo prevzaté z experimentu s inými podmienkami neposkytuje
+porovnateľný základ.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{Presné algoritmy použité v implementácii. Vlastné spracovanie.}
+  \label{tab:implemented-models}
+  \begin{tabularx}{\textwidth}{lXX}
+    \toprule
+    Model & Implementácia & Čo sa počas učenia mení \\
+    \midrule
+    logistická regresia &
+      \texttt{LogisticRegression} z knižnice scikit-learn,
+      vyvážené váhy tried, najviac 2~000 iterácií &
+      jedna váha pre každý príznak a posun $b$; validácia vyberá
+      $C\in\{0{,}1;1;10\}$ a rozhodovací prah \\
+    náhodný les &
+      \texttt{RandomForestClassifier} z knižnice scikit-learn,
+      500 stromov &
+      otázky v uzloch stromov; validácia vyberá hĺbku 10, 20 alebo bez
+      limitu a minimálne 1 alebo 5 vzoriek v liste \\
+    dvojvrstvová GCN &
+      vlastná trieda v PyTorch, dve lineárne vrstvy 128$\rightarrow$2,
+      riedka normalizovaná matica susednosti &
+      matice váh oboch vrstiev; Adam používa krok 0,01, váhový útlm
+      $5\cdot10^{-4}$, dropout 0,5 a skoré zastavenie po 8 epochách \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Váhy neurónového a lineárneho modelu sa všeobecne menia proti smeru,
+v ktorom rastie stratová funkcia:
+\begin{equation}
+  \boldsymbol{\theta}_{t+1}
+  =\boldsymbol{\theta}_{t}-\eta\nabla_{\boldsymbol{\theta}}
+  \mathcal{L}(\boldsymbol{\theta}_{t}),
+  \label{eq:gradient-update}
+\end{equation}
+kde $\boldsymbol{\theta}$ označuje učené parametre, $\eta$ rýchlosť
+učenia a $\nabla\mathcal{L}$ smer najväčšieho rastu chyby. V praxi GCN
+používa adaptívny algoritmus Adam, ktorý pre každý parameter upravuje
+veľkosť kroku podľa priebehu predchádzajúcich gradientov. Náhodný les
+gradient nepoužíva; skladá rozhodovacie pravidlá priamo z trénovacích
+príkladov.
+
+Pred učením sa každý príznak prevedie na porovnateľnú mierku. Ak sú
+napríklad poplatky v tisícoch satoshi a korelácia v intervale
+$[-1,1]$, veľké jednotky poplatku by mohli neprimerane ovplyvniť
+optimalizáciu. Štandardizovaná hodnota je
+\begin{equation}
+  z_{ij}=\frac{x_{ij}-\mu_j^{\mathrm{train}}}
+  {\sigma_j^{\mathrm{train}}},
+  \label{eq:training-standardization}
+\end{equation}
+kde $x_{ij}$ je príznak $j$ transakcie $i$. Priemer $\mu_j$ a
+smerodajná odchýlka $\sigma_j$ sa počítajú výhradne z tréningu.
+Validácia a test používajú tie isté trénovacie hodnoty. Model tak pri
+príprave vstupu nevidí rozdelenie budúcich dát.
+
+\subsubsection{Logistická regresia}
+
+Logistická regresia priradí každému príznaku váhu. Kladná váha zvyšuje
+skóre ilicitnej triedy, záporná ho
+znižuje a váha blízka nule znamená malý lineárny vplyv. Pre vektor
+príznakov $\mathbf{x}$ najprv vypočíta
+\begin{equation}
+  s=\mathbf{w}^{\mathsf T}\mathbf{x}+b,
+\end{equation}
+kde $\mathbf{w}$ sú učené váhy a $b$ je posun. Sigmoidálna funkcia
+prevedie neobmedzené skóre na číslo od 0 do 1:
+\begin{equation}
+  p(y=1\mid\mathbf{x})=\frac{1}{1+\mathrm{e}^{-s}}.
+  \label{eq:logistic-sigmoid}
+\end{equation}
+Ak je napríklad výsledok 0,82, model priradil transakcii skóre 0,82
+pre ilicitnú triedu. Skóre je výstup modelu kalibrovaného voči
+označeniam Elliptic a nemá význam právnej pravdepodobnosti.
+
+Počas učenia sa váhy menia tak, aby znižovali binárnu krížovú entropiu
+\begin{equation}
+  \mathcal{L}=-\frac{1}{n}\sum_{i=1}^{n}
+  \left[y_i\log p_i+(1-y_i)\log(1-p_i)\right].
+\end{equation}
+Sebavedomá chybná predikcia vytvorí veľkú stratu. Regularizácia bráni
+neprimerane veľkým váham. Implementácia porovnáva
+$C\in\{0{,}1;1;10\}$ a vyberá hodnotu podľa validačného $F_1$.
+Váhy tried sú vyvážené, aby početnejšia licitná trieda nepotlačila
+menšiu ilicitnú triedu.
+
+\subsubsection{Náhodný les}
+
+Rozhodovací strom sa učí sériu otázok typu \uv{je poplatok menší než
+hranica $t$?} alebo \uv{je počet výstupov väčší než 2?}. Každá otázka
+rozdelí trénovacie príklady na dve vetvy. Algoritmus vyberá príznak a
+hranicu, ktoré znižujú nečistotu tried. Giniho nečistota uzla je
+\begin{equation}
+  G=1-\sum_{k\in\{0,1\}}p_k^2,
+  \label{eq:gini}
+\end{equation}
+kde $p_k$ je podiel triedy $k$ v uzle. Ak uzol obsahuje iba jednu
+triedu, $G=0$. Pri rovnakom zastúpení dvoch tried je $G=0{,}5$.
+
+Jeden strom sa môže príliš prispôsobiť náhodným detailom tréningu.
+Náhodný les preto vytvorí 500 stromov. Každý strom dostane náhodnú
+vzorku trénovacích riadkov a pri delení skúma náhodnú podmnožinu
+príznakov. Výsledné skóre je priemer hlasov stromov. Model tak dokáže
+zachytiť nelineárne pravidlá, napríklad kombináciu nízkeho počtu
+výstupov, vysokej hodnoty a nezvyčajného poplatku
+\cite{breiman2001random}.
+
+Ak $p_m(y=1\mid\mathbf{x})$ je podiel ilicitných trénovacích príkladov
+v liste stromu $m$, skóre celého lesa s $M=500$ stromami je
+\begin{equation}
+  p_{\mathrm{RF}}(y=1\mid\mathbf{x})
+  =\frac{1}{M}\sum_{m=1}^{M}p_m(y=1\mid\mathbf{x}).
+  \label{eq:rf-average}
+\end{equation}
+Les teda nehľadá jednu jedinú charakteristiku \uv{ilicitnosti}. Každý
+strom vytvorí inú postupnosť otázok a konečné skóre ich spriemeruje.
+
+Porovnávajú sa maximálne hĺbky 10, 20 a bez obmedzenia a minimálne
+počty vzoriek v liste 1 alebo 5. Najlepšia kombinácia sa zvolí na
+validácii pri počiatočnej hodnote 42. Potom sa celý les naučí päťkrát
+s hodnotami 42 až 46. Rozdiel medzi behmi ukazuje, ako výsledok závisí
+od náhodného výberu vzoriek a príznakov.
+
+\subsubsection{Grafová konvolučná sieť}
+
+Logistická regresia a náhodný les posudzujú každý riadok samostatne.
+Grafová konvolučná sieť (GCN) doplní k príznakom transakcie aj
+informáciu od jej susedov. Pred výpočtom sa ku každému vrcholu pridá
+hrana do seba a matica susednosti sa normalizuje:
+\begin{equation}
+  \hat{A}=A+I,\qquad
+  \tilde{A}=\hat{D}^{-1/2}\hat{A}\hat{D}^{-1/2}.
+\end{equation}
+Matica $A$ opisuje hrany, $I$ pridáva vlastnú informáciu vrcholu a
+$\hat{D}$ obsahuje počty spojení. Normalizácia bráni tomu, aby vrchol s
+mnohými susedmi získal automaticky neúmerne veľké hodnoty.
+
+Jedna grafová vrstva sa dá zapísať ako
+\begin{equation}
+  H^{(l+1)}=\sigma\!\left(\tilde{A}H^{(l)}W^{(l)}\right),
+  \label{eq:gcn-layer}
+\end{equation}
+kde $H^{(0)}=X$ je vstupná matica príznakov, $W^{(l)}$ sú učené váhy a
+$\sigma$ je aktivačná funkcia. Prvá vrstva v implementácii vytvorí pre
+každý vrchol 128 skrytých hodnôt. Použitá funkcia ReLU ponechá kladné
+číslo a záporné nahradí nulou:
+\begin{equation}
+  \operatorname{ReLU}(z)=\max(0,z).
+  \label{eq:relu}
+\end{equation}
+Nelinearita umožňuje dvom vrstvám modelovať vzťahy, ktoré jedna
+lineárna transformácia nezachytí. Po ReLU sa počas tréningu náhodne vynuluje polovica
+skrytých hodnôt. Tento postup sa nazýva náhodné vypínanie, angl.
+\emph{dropout}. Model sa tým učí používať viac skrytých hodnôt.
+
+Druhá grafová vrstva vytvorí dve skóre, jedno pre licitnú a druhé pre
+ilicitnú triedu. Funkcia softmax ich prevedie na súčet 1:
+\begin{equation}
+  p_k=\frac{\mathrm{e}^{s_k}}
+  {\mathrm{e}^{s_0}+\mathrm{e}^{s_1}},\qquad k\in\{0,1\}.
+  \label{eq:softmax}
+\end{equation}
+Váhy sa
+upravujú algoritmom Adam s rýchlosťou učenia 0,01 a váhovým útlmom
+$5\cdot10^{-4}$. Používa sa vážená krížová entropia, aby ilicitná
+trieda mala napriek menšiemu počtu príkladov primeraný vplyv. Tréning
+má najviac 200 epoch; epocha je jeden úplný krok učenia nad
+trénovacími vrcholmi. Ak sa validačný $F_1$ nezlepší osem epoch, uloží
+sa najlepší skorší stav a učenie sa zastaví \cite{kipf2017gcn}.
+
+Dve grafové vrstvy znamenajú, že reprezentácia vrcholu môže obsahovať
+informáciu od susedov vzdialených najviac dva preskoky. Neoznačené
+vrcholy zostávajú v grafe a môžu sprostredkovať túto informáciu. Keďže
+nemajú cieľovú triedu, nevstupujú do stratovej funkcie ani do metrík.
+
+\subsubsection{Spoločný postup učenia}
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{\textwidth}{!}{%
+  \begin{tikzpicture}[
+      >=Latex,
+      node distance=6mm,
+      every node/.style={font=\small,align=center},
+      flowbox/.style={draw,rounded corners,minimum width=31mm,minimum height=13mm}
+    ]
+    \node[flowbox,fill=blue!10] (train) {tréning\\uprav váhy};
+    \node[flowbox,right=of train,fill=yellow!18] (validation) {validácia\\vyber nastavenia a prah};
+    \node[flowbox,right=of validation,fill=green!10] (freeze) {uzamkni model\\už nič neuč};
+    \node[flowbox,right=of freeze,fill=orange!16] (test) {test\\zmeraj výsledok raz};
+    \draw[->] (train) -- (validation);
+    \draw[->] (validation) edge[bend left=22] node[above,font=\scriptsize]{ďalšie nastavenie} (train);
+    \draw[->] (validation) -- (freeze);
+    \draw[->] (freeze) -- (test);
+  \end{tikzpicture}%
+  }
+  \caption{Oddelenie učenia, výberu nastavení a konečného testu.
+  Testovacie dáta sa nevracajú späť do učenia. Vlastné spracovanie.}
+  \label{fig:model-training-flow}
+\end{figure}
+
+Každý model vráti skóre ilicitnej triedy od 0 do 1. Na validácii sa
+skúšajú prahy od 0,05 do 0,95 s krokom 0,01 a vyberie sa prah s
+najvyšším ilicitným $F_1$. Ak je napríklad prah 0,63, skóre 0,70 sa
+zmení na ilicitnú predikciu a skóre 0,40 na licitnú. Vybraný prah sa
+bez ďalšej úpravy použije na test.
+
+\subsection{Metriky a interpretačné pravidlá}
+
+Predikcie sa najprv rozdelia do štyroch skupín. \emph{TP} je správne
+zachytená ilicitná transakcia. \emph{FP} je licitná transakcia, ktorú
+model omylom označil ako ilicitnú. \emph{FN} je nezachytená ilicitná
+transakcia a \emph{TN} je správne rozpoznaná licitná transakcia. Tieto
+štyri počty tvoria maticu zámen.
+
+Precíznosť odpovedá na otázku: \uv{Ak model upozornil na transakciu,
+ako často mal podľa dát pravdu?}
+\begin{equation}
+  \mathrm{precision}=\frac{TP}{TP+FP}.
+\end{equation}
+Úplnosť odpovedá na inú otázku: \uv{Koľko zo všetkých ilicitných
+transakcií model našiel?}
+\begin{equation}
+  \mathrm{recall}=\frac{TP}{TP+FN}.
+\end{equation}
+Označenie väčšieho počtu transakcií môže zvýšiť úplnosť a súčasne
+vytvoriť viac falošných upozornení. Hlavná metrika $F_1$ je
+harmonický priemer oboch hodnôt:
+\begin{equation}
+  F_1 = 2\frac{\mathrm{precision}\cdot\mathrm{recall}}
+  {\mathrm{precision}+\mathrm{recall}}.
+\end{equation}
+
+Ak je napríklad $TP=80$, $FP=20$ a $FN=40$, precíznosť je
+$80/(80+20)=0{,}80$, úplnosť $80/(80+40)=0{,}67$ a $F_1$ približne
+0,73. Vysoká obyčajná presnosť by bola pri nevyvážených triedach
+zavádzajúca: model by mohol označiť všetko ako licitné a napriek tomu
+správne zaradiť väčšinu riadkov.
+
+Vyvážená úspešnosť je priemer správne zachyteného podielu licitnej a
+ilicitnej triedy. PR-AUC je plocha pod krivkou precíznosti a úplnosti
+pri všetkých možných prahoch. Hodnotí poradie skóre bez výberu jediného
+prahu. Hodnota smerujúca k 1 je
+lepšia; jej základná úroveň závisí od podielu ilicitnej triedy.
+
+Výsledok modelu sa interpretuje ako predikcia triedy v dátovom súbore
+a neposkytuje dôkaz trestného činu. Kandidát párovania vyjadruje
+technickú podobnosť s verejnou transakciou bez identifikácie osoby.

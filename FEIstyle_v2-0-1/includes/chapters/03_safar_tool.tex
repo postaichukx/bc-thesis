@@ -1,0 +1,404 @@
+\section{Nástroj BitcoinTxSubgraphBuilder}
+\label{sec:safar-tool}
+
+Šafář a spoluautori navrhli otvorený nástroj
+\texttt{BitcoinTxSubgraphBuilder}, ktorý z verejných bitcoinových
+transakcií zostaví vysvetliteľný dátový súbor. Pri každom príznaku
+uchováva jeho význam, postup výpočtu a čas, ku ktorému sa hodnota
+vzťahuje \cite{safar2026elliptic,bitcoinSubgraphBuilder}.
+
+Rozbor vychádza zo zdrojového kódu revízie
+\texttt{8e01503c0f9f} z 9. februára 2026; úplný identifikátor je uvedený
+v bibliografickom zázname repozitára. Jednotlivé podkapitoly sledujú
+vstupy, výpočty a uložené výstupy programov. Plný beh vyžaduje vlastný
+Bitcoin Core, PostgreSQL, Blockbook, .NET a sekvenčné spracovanie
+blockchainu. Praktická časť preto používa menší rozsah; architektúra
+pôvodného nástroja určuje kontrolované riziká.
+
+\subsection{Technické pojmy}
+
+\begin{description}
+  \item[API] Dohodnutý spôsob, ako si dva programy posielajú požiadavky
+  a odpovede. Blockbook API napríklad vráti údaje transakcie podľa
+  verejného \texttt{txid}.
+  \item[RPC] Rozhranie na volanie funkcie iného programu. Nástroj cez
+  Bitcoin Core RPC žiada úplný uzol o bloky a ich transakcie.
+  \item[PostgreSQL] Databáza, v ktorej nástroj priebežne uchováva
+  transakcie, triedy, vzdialenosti a odpovede Blockbook.
+  \item[JSON] Textový formát odpovede API. Obsahuje pomenované polia,
+  napríklad \texttt{vin}, \texttt{vout}, \texttt{fees} a
+  \texttt{blockHeight}.
+  \item[Preskok] Jedna hrana v grafe. Transakcia vo vzdialenosti dva
+  preskoky je dostupná cez dve po sebe idúce hrany.
+  \item[Parser blockchainu] Program, ktorý číta blok po bloku a mení
+  surové transakcie na priebežné štatistiky.
+  \item[Kontrolný bod] Súbor s rozpracovaným stavom. Po prerušení možno
+  pokračovať od uloženej výšky bloku namiesto opakovania celého výpočtu.
+  \item[Stav UTXO] Mapa ešte neminutých výstupov. Umožňuje pri spracovaní
+  vstupu nájsť adresu a hodnotu staršieho výstupu.
+  \item[Predspracovanie] Posledná úprava dát pred učením, napríklad
+  normalizácia čísel a vytvorenie masiek pre tréning, validáciu a test.
+\end{description}
+
+\subsection{Čo nástroj rieši a čo potrebuje na vstupe}
+
+Nástroj prijíma zoznam verejných bitcoinových \texttt{txid} s triedami.
+Pri práci s Elliptic preto musí existovať samostatné mapovanie
+\texttt{txId}$\rightarrow$\texttt{txid}. Anonymizovaný \texttt{txId}
+ako vstup nestačí. Nástroj mapovanie nehľadá a neidentifikuje vlastníkov
+adries. Spracovanie začína od verejných transakcií, ktoré poskytol
+používateľ \cite{safar2026elliptic,bitcoinSubgraphBuilder}.
+
+Obrázok~\ref{fig:safar-tool-architecture} rozdeľuje spracovanie na tri
+vrstvy. Modrá časť zhromaždí transakcie a ich grafové okolie. Oranžová
+časť prejde blockchain a vytvorí časovo správne štatistiky adries.
+Zelená časť spojí oba zdroje do tabuliek použiteľných pri učení.
+
+\begin{figure}[p]
+  \centering
+  \begin{tikzpicture}[
+      >=Latex,
+      every node/.style={font=\small,align=center},
+      phase/.style={draw,rounded corners=2mm,minimum width=43mm,minimum height=12mm,line width=.7pt},
+      store/.style={draw,cylinder,shape border rotate=90,aspect=.23,minimum width=34mm,minimum height=14mm,line width=.7pt},
+      flowarrow/.style={-{Latex[length=2.4mm]},line width=.8pt},
+      note/.style={font=\scriptsize,align=left,text width=42mm}
+    ]
+    \node[phase,fill=blue!9] (seed) at (0,0) {označené verejné\\\texttt{txid}};
+    \node[phase,fill=blue!9] (import) at (0,-1.8) {Python: import\\počiatočných transakcií};
+    \node[phase,fill=blue!9] (expand) at (0,-3.6) {Python: Blockbook\\rozšírenie na $d$ preskokov};
+    \node[store,fill=blue!5] (postgres) at (0,-5.6) {PostgreSQL\\transakcie + JSON};
+
+    \node[phase,fill=orange!12] (addresses) at (6.1,-1.8) {C\#: výber adries\\a cieľových výšok};
+    \node[phase,fill=orange!12] (scan) at (6.1,-3.6) {C\#: Bitcoin Core\\blok po bloku};
+    \node[store,fill=orange!7] (stats) at (6.1,-5.6) {štatistiky adries\\pri každej výške};
+
+    \node[phase,fill=green!10] (construct) at (3.05,-7.7) {C\#: konštrukcia príznakov\\a hrán};
+    \node[phase,fill=green!10] (preprocess) at (3.05,-9.5) {Python: predspracovanie\\iba podľa tréningu};
+    \node[phase,fill=green!16] (output) at (3.05,-11.3) {CSV + DGL graf\\nový transparentný dátový súbor};
+
+    \draw[flowarrow] (seed) -- (import);
+    \draw[flowarrow] (import) -- (expand);
+    \draw[flowarrow] (expand) -- (postgres);
+    \draw[flowarrow] (postgres.east) to[out=0,in=-90] (addresses.south);
+    \draw[flowarrow] (addresses) -- (scan);
+    \draw[flowarrow] (scan) -- (stats);
+    \draw[flowarrow] (postgres.south) to[out=-90,in=180] (construct.west);
+    \draw[flowarrow] (stats.south) to[out=-90,in=0] (construct.east);
+    \draw[flowarrow] (construct) -- (preprocess);
+    \draw[flowarrow] (preprocess) -- (output);
+
+    \node[note,anchor=west] at (8.6,-2.7)
+      {Blockbook poskytne pohodlné\\vyhľadanie konkrétnej transakcie.};
+    \node[note,anchor=west] at (8.6,-4.5)
+      {Bitcoin Core poskytne úplnú\\chronologickú históriu blokov.};
+  \end{tikzpicture}
+  \caption{Architektúra nástroja BitcoinTxSubgraphBuilder. Dve vetvy sa
+  spoja až pri výpočte príznakov: metadata transakcií pochádzajú z
+  Blockbook, časové štatistiky adries zo sekvenčného čítania Bitcoin
+  Core. Vlastné spracovanie podľa \cite{safar2026elliptic,bitcoinSubgraphBuilder}.}
+  \label{fig:safar-tool-architecture}
+\end{figure}
+
+\subsection{Python: vytvorenie transakčného podgrafu}
+
+Prvý program, \texttt{import\_elliptic\_to\_postgres.py}, načíta známe
+verejné hashe, triedu a časový krok. Označené transakcie dostanú
+vzdialenosť nula. Databázový riadok ďalej obsahuje pole
+\texttt{distance}, pôvod v Elliptic a pole \texttt{data}, do ktorého sa
+neskôr uloží odpoveď Blockbook.
+
+Druhý program, \texttt{expand\_transaction\_network.py}, buduje okolie
+po vrstvách. Z poľa \texttt{vin} číta staršie transakcie, ktorých
+výstupy boli minuté. Z poľa \texttt{vout} číta \texttt{spentTxId}, teda
+novšie transakcie, ktoré už daný výstup minuli. Okolie sa preto
+rozširuje dozadu aj dopredu. Po každej vrstve program stiahne chýbajúce
+JSON odpovede a cyklus opakuje, kým vo vzdialenosti najviac $d$ nič
+nechýba.
+
+Ak $S$ označuje množinu počiatočných označených transakcií a
+$N^{-}(V)$ a $N^{+}(V)$ ich predchodcov a nasledovníkov, vrstvy možno
+zapísať takto:
+\begin{equation}
+  V_0=S,\qquad
+  V_k=V_{k-1}\cup N^{-}(V_{k-1})\cup N^{+}(V_{k-1}),
+  \quad k=1,\ldots,d.
+  \label{eq:hop-expansion}
+\end{equation}
+Vzdialenosť vrcholu $v$ je dĺžka najkratšej cesty od niektorého
+počiatočného vrcholu:
+\begin{equation}
+  \operatorname{dist}(v,S)=\min_{s\in S}\operatorname{dist}(s,v).
+\end{equation}
+V praxi sa smer pri meraní okolia ignoruje, hoci vo výslednom grafe sa
+smer toku zachováva.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      >=Latex,
+      every node/.style={font=\small,align=center},
+      tx/.style={draw,circle,minimum size=10mm,line width=.7pt},
+      edge/.style={-{Latex[length=2mm]},line width=.75pt},
+      ring/.style={draw,dashed,rounded corners=3mm,line width=.7pt}
+    ]
+    \node[ring,minimum width=28mm,minimum height=23mm,fill=green!5] (r0) at (0,0) {};
+    \node[ring,minimum width=67mm,minimum height=44mm,fill=blue!3] (r1) at (0,0) {};
+    \node[ring,minimum width=105mm,minimum height=64mm,fill=orange!3] (r2) at (0,0) {};
+    \node[tx,fill=green!18] (seed) at (0,0) {$S$};
+    \node[tx,fill=blue!15] (a) at (-2.1,.9) {$A$};
+    \node[tx,fill=blue!15] (b) at (2.1,-.9) {$B$};
+    \node[tx,fill=orange!18] (c) at (-4,.3) {$C$};
+    \node[tx,fill=orange!18] (d) at (4,1.2) {$D$};
+    \node[tx,fill=orange!18] (e) at (3.8,-1.8) {$E$};
+    \draw[edge] (c) -- (a);
+    \draw[edge] (a) -- (seed);
+    \draw[edge] (seed) -- (b);
+    \draw[edge] (b) -- (d);
+    \draw[edge] (b) -- (e);
+    \node[font=\scriptsize,anchor=west] at (5.4,1.4) {$d=2$};
+    \node[font=\scriptsize,anchor=west] at (3.6,2.6) {$d=1$};
+    \node[font=\scriptsize,anchor=west] at (1.1,1.0) {$d=0$};
+  \end{tikzpicture}
+  \caption{Rozšírenie podgrafu na dva preskoky. Vrcholy $A$ a $B$ sú
+  vzdialené jeden preskok od označenej transakcie $S$; vrcholy $C$,
+  $D$ a $E$ dva preskoky. Vlastné spracovanie.}
+  \label{fig:hop-expansion}
+\end{figure}
+
+Výhoda pevnej vzdialenosti je priamo spojená s grafovým modelom. Sieť
+s $L$ vrstvami prijíma správu najviac z $L$ preskokov. Ak dátový súbor
+obsahuje okolie do vzdialenosti $d\geq L$, hranica vzorky neodreže
+informáciu, ktorú by daný model vedel použiť. Voľba väčšieho $d$
+zvyšuje počet vrcholov a pridáva neoznačené kontextové transakcie.
+
+\subsection{C\#: časovo správna história adries}
+
+Samotná odpoveď transakcie neobsahuje úplnú históriu každej adresy v
+presnom minulom okamihu. Nástroj preto najprv príkazom
+\texttt{extract-addresses} vyberie všetky adresy z podgrafu a ku každej
+uloží výšku bloku, pri ktorej bude štatistika potrebná. Príkaz
+\texttt{collect} potom číta bloky cez Bitcoin Core RPC od začiatku
+reťazca po zadanú cieľovú výšku.
+
+Pri výstupe transakcie analyzátor pridá nový záznam do vlastnej mapy UTXO.
+Pri neskoršom vstupe ten istý záznam nájde, prečíta jeho adresu a
+hodnotu a z mapy ho odstráni. Tým určí pôvod hodnoty vstupu priamo z
+predchádzajúceho výstupu. Počítadlá sa aktualizujú pre adresy potrebné
+vo vybranom podgrafe; analyzátor pritom prechádza úplnú chronológiu
+blokov.
+
+Pre adresu $a$ a výšku bloku $h$ nástroj uchováva najmä tieto hodnoty:
+\begin{align}
+  R_a(h) &= \sum_{o:\,\operatorname{addr}(o)=a,\,h(o)\leq h}\operatorname{value}(o),
+  &&\text{celková prijatá hodnota},\\
+  S_a(h) &= \sum_{i:\,\operatorname{addr}(i)=a,\,h(i)\leq h}\operatorname{value}(i),
+  &&\text{celková odoslaná hodnota},\\
+  B_a(h) &= R_a(h)-S_a(h),
+  &&\text{zostatok},\\
+  L_a(h) &= t_a^{\mathrm{last}}(h)-t_a^{\mathrm{first}}(h),
+  &&\text{životnosť adresy}.
+  \label{eq:address-stats}
+\end{align}
+Ďalej sa počíta počet transakcií, počet vytvorených výstupov, počet
+minutých výstupov a počty prichádzajúcich a odchádzajúcich transakcií.
+Hodnota pri $h$ obsahuje iba udalosti s výškou najviac $h$. Transakcia
+z budúceho bloku $h+1000$ teda nemôže zmeniť príznak staršej
+transakcie pri $h$.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      >=Latex,
+      every node/.style={font=\small,align=center},
+      event/.style={draw,circle,minimum size=9mm,line width=.7pt},
+      snapshot/.style={draw,rounded corners=2mm,fill=green!10,minimum width=33mm,minimum height=11mm},
+      timearrow/.style={-{Latex[length=2.2mm]},line width=.8pt}
+    ]
+    \draw[timearrow] (-.5,0) -- (11.2,0) node[right]{výška bloku};
+    \node[event,fill=blue!10] (e1) at (1,0) {$h_1$};
+    \node[event,fill=blue!10] (e2) at (4,0) {$h_2$};
+    \node[event,fill=orange!15] (target) at (7,0) {$h$};
+    \node[event,fill=gray!12] (future) at (10,0) {$h+q$};
+    \node[snapshot] (state) at (7,-1.7) {príznak pri $h$\\používa $h_1,h_2,h$};
+    \draw[timearrow] (e1.south) to[bend right=18] (state.west);
+    \draw[timearrow] (e2.south) to[bend right=9] (state.north west);
+    \draw[timearrow] (target.south) -- (state.north);
+    \draw[dashed,line width=.8pt,red!70] (future.south) to[bend left=20]
+      node[below,font=\scriptsize,text=red!70]{nepoužiť} (state.east);
+  \end{tikzpicture}
+  \caption{Časovo ohraničená štatistika adresy. Budúca udalosť sa do
+  príznaku staršej transakcie nezapočíta. Vlastné spracovanie podľa
+  \cite{safar2026elliptic,bitcoinSubgraphBuilder}.}
+  \label{fig:time-scoped-address-stat}
+\end{figure}
+
+Spracovanie celého blockchainu trvá dlho. Implementácia preto sťahuje
+bloky do obmedzeného kanála, spracúva ich v poradí a každých 50~000
+blokov ukladá stav UTXO aj adresné štatistiky. Prerušený beh možno
+obnoviť voľbou \texttt{--checkpoint}. Samostatný príkaz
+\texttt{deduplicate} zlúči rovnaké štatistické snímky platné pre viac
+cieľových výšok a zmenší výsledný súbor.
+
+\subsection{Konštrukcia príznakov a hrán}
+
+Príkaz \texttt{create-dataset} spojí tri zdroje: JSON transakcie z
+PostgreSQL, časové štatistiky adries a hodinovú históriu ceny BTC.
+Vytvorí súbor \texttt{tx\_features.csv} a súbor \texttt{edges.csv}.
+Hrana sa uloží iba vtedy, keď sa v podgrafe nachádza zdrojová aj cieľová
+transakcia. Nesie aj hodnotu minutého výstupu a výšky oboch blokov.
+
+Tabuľka~\ref{tab:open-elliptic-features} uvádza všetky skupiny hodnôt,
+ktoré konštruktor počíta. Štatistiky sa počítajú samostatne pre vstupy
+a výstupy. Pri každej adresnej vlastnosti sa ukladajú minimum, maximum,
+priemer, medián a rozpätie. \emph{Medián} je prostredná hodnota po
+zoradení a \emph{rozpätie} je maximum mínus minimum.
+
+\begin{table}[p]
+  \centering
+  \small
+  \caption{Skupiny príznakov vytvárané nástrojom
+  BitcoinTxSubgraphBuilder \cite{bitcoinSubgraphBuilder}.}
+  \label{tab:open-elliptic-features}
+  \begin{tabularx}{\textwidth}{lX}
+    \toprule
+    Skupina & Význam \\
+    \midrule
+    základ transakcie & výška bloku, hodnota a hodnota v USD, poplatok
+      a poplatok v USD, veľkosť v bajtoch a virtuálnych bajtoch \\
+    pomery & poplatok ku vstupnej hodnote, počet vstupov k počtu
+      výstupov a počet vstupných transakcií k počtu výstupov \\
+    typ transakcie & príznak coinbase a počet vstupných transakcií \\
+    opakovanie adries & počet adries spoločných pre vstupy aj výstupy,
+      podiel nových výstupných adries a podiel hodnoty smerujúcej na ne \\
+    hodnoty vstupov/výstupov & počet, minimum, maximum, smerodajná
+      odchýlka, priemer, medián a tie isté sumy po prepočte na USD \\
+    podiely hodnôt & minimum, maximum, odchýlka, rozptyl a medián podielu
+      jednej položky na celkovej vstupnej alebo výstupnej hodnote \\
+    adresy & celkový a jedinečný počet adries a ich vzájomný pomer \\
+    história adries & minimum, maximum, priemer, medián a rozpätie pre
+      počet transakcií, prichádzajúce a odchádzajúce transakcie,
+      zostatok, prijatú hodnotu, odoslanú hodnotu a životnosť \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Tri odvodené veličiny možno zapísať priamo:
+\begin{align}
+  r_{\mathrm{fee}} &= \frac{\mathrm{fee}}{\mathrm{valueIn}},\\
+  r_{\mathrm{addr}} &=
+  \frac{|A_{\mathrm{out}}\setminus A_{\mathrm{in}}|}{|A_{\mathrm{out}}|},\\
+  r_{\mathrm{foreign\ value}} &=
+  \frac{\sum_{o:\,A(o)\cap A_{\mathrm{in}}=\emptyset}\mathrm{value}(o)}
+  {\sum_o\mathrm{value}(o)}.
+  \label{eq:open-elliptic-ratios}
+\end{align}
+Prvý pomer ukazuje, aká časť vstupnej hodnoty tvorí poplatok. Druhý
+ukazuje podiel výstupných adries, ktoré sa nenachádzajú medzi vstupmi.
+Tretí ukazuje podiel hodnoty odoslanej na takéto adresy. Určenie
+vráteného zvyšku vyžaduje ďalšie údaje alebo heuristiku.
+
+Pri kontrole revízie uvedenej na začiatku kapitoly sa našiel aj detail,
+ktorý treba pri reprodukcii otestovať: výraz pre
+\texttt{VinVoutRatio} delí dve celé čísla pred uložením do typu
+\texttt{double}. V jazyku C\# sa tak výsledok najprv skráti na celé
+číslo. Ostatný podobný pomer \texttt{TxInVoutRatio} obsahuje explicitný
+prevod na \texttt{double}. Táto práca preto nepreberá hodnotu
+\texttt{VinVoutRatio} bez samostatného testu a uvádza použitú revíziu
+kódu, aby bol výsledok dohľadateľný.
+
+\subsection{Predspracovanie pre strojové učenie}
+
+Surový výstup sa predvolene nenormalizuje. Výskumník tak vidí pôvodné
+satoshi, počty a časy a môže ich nezávisle skontrolovať. Voliteľný
+skript \texttt{open\_\allowbreak{}elliptic\_\allowbreak{}preprocessing.py}
+vytvorí formát podobný Elliptic. Kroky 1--29 používa na tréning, 30--34
+na validáciu a 35--49 na test.
+
+Pre každý numerický príznak $j$ sa priemer a smerodajná odchýlka
+vypočítajú iba z transakcií dostupných na konci tréningovej časti:
+\begin{equation}
+  z_{ij}=\frac{x_{ij}-\mu_j^{\mathrm{train}}}
+  {\sigma_j^{\mathrm{train}}}.
+  \label{eq:safar-train-scaling}
+\end{equation}
+Rovnaké $\mu_j^{\mathrm{train}}$ a $\sigma_j^{\mathrm{train}}$ sa potom
+použijú na validáciu aj test. Skript uloží aj objekt
+\texttt{scaler.pkl} s parametrami škálovania, aby sa rovnaká transformácia dala použiť na novej
+transakcii. Pri hranách pridá opačný smer pre učenie GNN. Hrany, ktoré
+by po obrátení prenášali správu z neskoršej časti do skoršej, odstráni.
+
+\subsection{Presný postup spustenia}
+
+Tabuľka~\ref{tab:safar-commands} oddeľuje príkazy podľa vstupu a
+výstupu. Každý krok zodpovedá jednej overiteľnej transformácii dát.
+
+\begin{table}[p]
+  \centering
+  \scriptsize
+  \caption{Postup nástroja podľa dokumentácie a zdrojového kódu
+  \cite{bitcoinSubgraphBuilder}.}
+  \label{tab:safar-commands}
+  \begin{tabularx}{\textwidth}{lXX}
+    \toprule
+    Krok & Vstup a operácia & Výstup \\
+    \midrule
+    SQL tabuľky & vytvorenie tabuliek transakcií a adries v PostgreSQL
+      & prázdna databázová schéma \\
+    import & verejné \texttt{txid}, triedy a časové kroky
+      & počiatočné vrcholy so vzdialenosťou 0 \\
+    fetch/expand & Blockbook a maximálna vzdialenosť $d$
+      & JSON všetkých transakcií podgrafu \\
+    extract-addresses & vstupy a výstupy transakcií podgrafu
+      & dvojice adresa--cieľová výška \\
+    collect & bloky z Bitcoin Core od výšky 0 po cieľ
+      & časové snímky štatistík a stav UTXO \\
+    deduplicate & opakované rovnaké snímky jednej adresy
+      & komprimované štatistiky pre viac výšok \\
+    create-dataset & transakcie, štatistiky adries a história ceny
+      & \texttt{tx\_features.csv} a \texttt{edges.csv} \\
+    predspracovanie & surové CSV a hranice častí
+      & normalizované CSV, triedy, hrany a parametre škálovania \\
+    prevod do DGL & CSV vo formáte Elliptic
+      & binárny graf s príznakmi, triedami a maskami \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Minimálny logický sled začne importom a rozšírením grafu. Potom sa
+extrahujú adresy, zozbierajú a skomprimujú ich štatistiky a napokon sa
+vytvorí dátový súbor. Ak sa zmení
+maximálna vzdialenosť $d$, zoznam adries alebo cieľová výška, nadväzujúce
+výstupy treba vytvoriť znovu alebo jednoznačne oddeliť podľa konfigurácie.
+
+\subsection{Opravené chyby a zostávajúce obmedzenia}
+
+Nástroj zachováva pôvodný význam a jednotku príznakov, adresnú históriu
+zastaví pri čase analyzovanej transakcie, normalizáciu učí na
+tréningovej časti a grafové okolie vymedzuje
+počtom preskokov. Takýto výstup možno vypočítať aj pre novú verejnú
+transakciu, čo pri anonymizovaných stĺpcoch pôvodného Elliptic nebolo
+možné \cite{safar2026elliptic}.
+
+Nástroj nezaručí nezávislé označenia. Ak trénovacia a
+testovacia množina zdieľajú adresu alebo tú istú entitu pod viacerými
+adresami, model môže stále rozpoznávať už videný subjekt. Autori preto
+odporúčajú vytvoriť nezávislý test, ktorý nezdieľa adresy ani adresy v
+$d$-preskokových okoliach. Ani tento technický filter nedokazuje, že dve
+odlišné adresy patria rôznym ľuďom.
+
+Ďalším obmedzením je prevádzková náročnosť. Blockbook uľahčuje náhodný
+prístup k transakciám; časovo presná história veľkého množstva adries
+si vyžaduje sekvenčný prechod blockchainu. Výsledok tiež nemožno
+publikovať ako opravený Elliptic, pretože licencia
+CC BY-NC-ND 4.0 zakazuje šírenie odvodených upravených verzií. Preto je
+potrebné publikovať zdrojový kód, konfiguráciu, verziu vstupov a súhrnné
+výsledky. Chránený odvodený dátový súbor sa nezverejňuje
+\cite{safar2026elliptic}.
+
+Praktická časť tejto práce používa menší postup. Cez verejný Blockbook
+získava šesť časových krokov, odpovede ukladá do SQLite a počíta 18
+priamo overiteľných lokálnych príznakov. Bez sekvenčného analyzátora
+Bitcoin Core nepočíta úplné časové štatistiky adries. Zvolený rozsah
+oddeľuje reprodukovateľný bakalársky experiment od infraštruktúry
+potrebnej na tvorbu celého nového dátového súboru.

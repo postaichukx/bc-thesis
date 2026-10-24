@@ -1,6 +1,8 @@
+% Load footnote extensions before hyperref to keep package definitions compatible.
+\AddToHook{package/hyperref/before}{\RequirePackage{scrextend}}
 \documentclass[bp]{FEIstyle}
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning}
+\usetikzlibrary{arrows.meta,calc,decorations.pathreplacing,fit,positioning,shapes.geometric}
 
 % Author of the thesis
 \FEIauthor{Postaichuk Pavlo}
@@ -16,9 +18,9 @@
 \FEIdate{--}{--}{2026}
 
 % Keywords
-\FEIkeywords{analýza blockchainu, AML, pranie špinavých peňazí, detekcia anomálií}
+\FEIkeywords{Bitcoin, Elliptic Bitcoin Dataset, analýza blockchainu, únik informácií, grafové neurónové siete}
 
-\FEIkeywordsEn{blockchain analysis, AML, money laundering, anomaly detection}
+\FEIkeywordsEn{Bitcoin, Elliptic Bitcoin Dataset, blockchain analysis, data leakage, graph neural networks}
 
 % Further details
 \FEIstudyProgramme{Aplikovaná informatika}
@@ -41,7 +43,7 @@
 %\FEImanualListOfGlossaries{includes/manual_glossary}
 
 % Bibliography database file
-\bibliography{includes/bibliography.bib}
+\addbibresource{includes/bibliography.bib}
 
 \begin{document}
 
@@ -57,12 +59,12 @@
 \FEItitlePage
 % TODO: vložiť oficiálne zadanie z AIS namiesto ukážkového PDF.
 %\includepdf[pages=-]{includes/assignment.pdf}
-% TODO: doplniť vlastné abstrakty a prípadné poďakovanie.
+% TODO: doplniť poďakovanie, ak ho autor chce zaradiť.
 %\FEIthanks{includes/thanks}
-%\FEIabstract{includes/abstract}
-%\FEIabstractEn{includes/abstractEN}
+\FEIabstract{includes/abstract}
+\FEIabstractEn{includes/abstractEN}
 \FEIcontent
-%\FEIlistOfFiguresAndTables
+\FEIlistOfFiguresAndTables
 
 %% List of units and abbreviations
 %%
@@ -81,7 +83,7 @@
 %% Manual list -- must be manually filled and sorted,
 %% does not make hyperlinks from the text.
 %% Edit includes/manual_glossary.tex.
-%\FEImanualListOfGlossaries{includes/manual_glossary}
+\FEImanualListOfGlossaries{includes/manual_glossary}
 
 %% Lists of algorithms and listings
 %\FEIlistOfAlgorithms
@@ -96,8 +98,7 @@
 
 \FEIintroduction{includes/introduction}
 \FEIcore{includes/core}
-% TODO: napísať záver podľa skutočne dosiahnutých výsledkov.
-%\FEIconclusion{includes/conclusion}
+\FEIconclusion{includes/conclusion}
 
 %% Uncomment only if the document is writen in english
 %\FEIresume{includes/resume}
