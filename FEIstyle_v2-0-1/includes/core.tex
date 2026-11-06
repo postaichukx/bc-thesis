@@ -8,12 +8,12 @@ v pôvodnom návrhu z roku 2008 opísal spôsob, ako môže sieť účastníkov
 overovať platby a vytvárať spoločnú históriu transakcií. Menovou
 jednotkou systému je bitcoin, označovaný skratkou BTC. Jeho emisiu
 určujú pravidlá protokolu, ktoré obmedzujú celkové množstvo na približne
-21 miliónov BTC~\cite{bitcoinFaq}.
+21 miliónov BTC.
 
 Pre túto prácu je podstatná verejná dostupnosť transakčných záznamov
 a ich vzájomné prepojenie. Umožňujú rekonštruovať vzťahy medzi
 transakciami a odvodiť z nich údaje využiteľné pri analýze blockchainu.
-Význam týchto údajov však závisí od spôsobu, akým transakcie vznikajú,
+Význam týchto údajov závisí od spôsobu, akým transakcie vznikajú,
 overujú sa a zaraďujú do blokov.
 
 \tikzset{
@@ -29,11 +29,8 @@ Bitcoinová sieť má usporiadanie typu peer-to-peer: jednotlivé uzly
 komunikujú priamo so svojimi susedmi a odovzdávajú si transakcie
 a bloky. Transakcia predstavuje záznam o prevode hodnoty podľa
 pravidiel protokolu. Blok združuje transakcie do spoločného záznamu
-a obsahuje hlavičku s údajmi potrebnými na jeho overenie. Úplný uzol
-samostatne kontroluje platnosť prijatých údajov; rozhodnutie
-nepreberá od banky ani od prevádzkovateľa iného uzla. Dokumentácia
-Bitcoin Developer Guide opisuje túto komunikáciu ako základ
-distribuovaného overovania~\cite{bitcoinDevP2P}.
+a obsahuje hlavičku s údajmi potrebnými na jeho overenie. Každý
+úplný uzol overuje prijaté údaje samostatne podľa pravidiel protokolu.
 
 Bloky sú prepojené do reťazca označovaného ako \emph{blockchain}.
 Hlavička každého bloku okrem počiatočného obsahuje kryptografický
@@ -59,9 +56,7 @@ od smeru rastu reťazca.
     \draw[btcarrow] (-1.5,-1.75) -- node[above,btcnote]
       {poradie blokov a smer rastu reťazca} (11.1,-1.75);
   \end{tikzpicture}
-  \caption[Prepojenie blokov pomocou hashov hlavičiek]{Prepojenie blokov pomocou hashov ich hlavičiek.
-  Odkazy smerujú k predchádzajúcim blokom; reťazec rastie opačným
-  smerom. Vlastné spracovanie podľa~\cite{bitcoinDevBlockChain}.}
+  \caption{Prepojenie blokov pomocou hashov hlavičiek.}
   \label{fig:block-transaction-io}
 \end{figure}
 
@@ -71,7 +66,7 @@ výške. Konkrétny blok sa preto identifikuje hashom jeho hlavičky.
 Hlavička obsahuje aj koreň Merkleovho stromu, ktorý sa postupným
 hashovaním dvojíc identifikátorov transakcií vypočíta pre transakcie
 daného bloku. Zmena týchto identifikátorov sa premietne do hlavičky
-a naruší nadväzujúce hashové odkazy~\cite{bitcoinDevBlockReference}.
+a naruší nadväzujúce hashové odkazy.
 Odolnosť histórie voči prepisovaniu navyše závisí od dôkazu práce,
 ktorý je opísaný v podkapitole~\ref{sec:bitcoin-mining}.
 
@@ -80,25 +75,25 @@ ktorý je opísaný v podkapitole~\ref{sec:bitcoin-mining}.
 
 Bežná bitcoinová transakcia\footnote{Výnimkou je \emph{coinbase},
 prvá transakcia bloku, ktorá nemíňa staršie výstupy a umožňuje
-ťažiarovi uplatniť nárok na blokovú subvenciu a poplatky~\cite{bitcoinDevMining}.}
+ťažiarovi uplatniť nárok na blokovú subvenciu a poplatky.}
 spotrebúva existujúce výstupy a vytvára nové. Každý výstup obsahuje
-hodnotu v satoshi a skript určujúci podmienky jej minutia;
-jeden BTC zodpovedá $100\,000\,000$ satoshi. Výstup, ktorý zatiaľ
+hodnotu v satoshi a skript určujúci podmienky jej minutia.
+Jeden BTC zodpovedá $100\,000\,000$ satoshi. Výstup, ktorý zatiaľ
 neminula iná transakcia, sa označuje ako \emph{UTXO}
 (angl. \emph{unspent transaction output}).
 
 Vstup nasledujúcej transakcie odkazuje na míňaný výstup
 identifikátorom pôvodnej transakcie \texttt{txid} a poradovým
-indexom \texttt{vout}. Výstup sa spotrebuje celý; prípadný zvyšok
+indexom \texttt{vout}. Výstup sa spotrebuje celý. Prípadný zvyšok
 sa vracia prostredníctvom nového výstupu (\emph{change}), ako
 znázorňuje obrázok~\ref{fig:utxo-example}. Poplatok predstavuje
 rozdiel medzi súčtom hodnôt míňaných výstupov a súčtom hodnôt
-nových výstupov~\cite{bitcoinDevTransactions}.
+nových výstupov.
 
 \begin{figure}[htbp]
   \centering
   \begin{tikzpicture}
-    \node[btcnote] at (-4.7,2) {Existujúce UTXO};
+    \node[btcnote] at (-4.7,2) {Míňané výstupy};
     \node[btcnote] at (4.7,2) {Nové výstupy};
     \node[btcbox,fill=blue!6,text width=34mm,minimum height=15mm]
       (a) at (-4.7,1) {Výstup $(\texttt{txid}_A,0)$\\0,6 BTC};
@@ -117,54 +112,48 @@ nových výstupov~\cite{bitcoinDevTransactions}.
     \node[btcnote] at (0,-2.25)
       {Poplatok: $1-(0{,}8+0{,}19)=0{,}01$ BTC};
   \end{tikzpicture}
-  \caption[Spotrebovanie UTXO a vytvorenie nových výstupov]{Spotrebovanie dvoch UTXO a vytvorenie dvoch nových výstupov.~\cite{bitcoinDevTransactions}.}
+  \caption{Minutie dvoch výstupov a vytvorenie nových.}
   \label{fig:utxo-example}
 \end{figure}
 
 \subsection{Autorizácia transakcií a správa kľúčov}
 
-Na platné minutie UTXO nestačí poznať jeho identifikátor.
-Vstup musí splniť podmienky skriptu príslušného výstupu.
-V bežných prípadoch ide o overenie digitálneho podpisu.
-\emph{Súkromný kľúč} je tajná hodnota používaná pri podpisovaní;
-zodpovedajúci \emph{verejný kľúč} umožňuje podpis overiť bez
-sprístupnenia súkromného kľúča. Existujú aj podmienky vyžadujúce viac
-podpisov alebo uplynutie určitého času. Platný podpis je teda
-súčasťou autorizácie, nie náhradou kontroly ostatných pravidiel
-transakcie~\cite{bitcoinDevTransactions}.
+Pri minutí výstupu musí vstup splniť podmienky jeho skriptu.
+Jednou z bežných podmienok je platný digitálny podpis.
+\emph{Súkromný kľúč} slúži na podpisovanie a zodpovedajúci
+\emph{verejný kľúč} umožňuje overiť podpis. Skript môže požadovať
+aj viac podpisov alebo uplynutie určitého času. Uzol pri overovaní
+kontroluje podmienky minutia spolu s ostatnými pravidlami
+transakcie.
 
-Bitcoinová \emph{adresa} je používateľsky čitateľný, kódovaný zápis
-údajov, z ktorých možno pre podporovaný typ výstupu zostaviť jeho
-podmienku minutia. Presný význam závisí od typu adresy:
-môže súvisieť s verejným kľúčom alebo so skriptom.
-Adresu preto nemožno všeobecne stotožniť s verejným kľúčom.
-V samotnej transakcii sa ukladá výstupný skript; adresa je jeho
-bežne používanou reprezentáciou pre príslušný typ výstupu.
+Bitcoinová \emph{adresa} je čitateľný zápis údajov potrebných
+na zostavenie výstupného skriptu. Podľa typu adresy môžu tieto
+údaje vychádzať z verejného kľúča alebo zo skriptu. Súčasťou
+transakčného výstupu je samotný skript.
 
 \emph{Peňaženka} spravuje kľúče, sleduje dostupné výstupy a zostavuje
 transakcie. Jedna peňaženka môže používať mnoho adries, napríklad
 odlišnú adresu na každé prijatie platby a ďalšiu na vrátenie zvyšku.
 Hodnota, s ktorou môže používateľ disponovať, vyplýva z výstupov,
-ktorých podmienky dokáže splniť. Dokumentácia peňaženiek preto
-oddeľuje správu kľúčov od záznamov transakcií uložených
-v blockchaine~\cite{bitcoinDevWallets}.
+ktorých podmienky dokáže splniť. Kľúče spravuje peňaženka,
+zatiaľ čo záznamy transakcií uchováva blockchain.
 
 \subsection{Šírenie transakcií, ťažba a potvrdenia}
 \label{sec:bitcoin-mining}
 
-Po zostavení a autorizácii môže peňaženka odoslať transakciu do siete.
-Uzol ju overí a podľa lokálnych pravidiel môže zaradiť do
-\emph{mempoolu}, množiny nepotvrdených transakcií, a ďalej šíriť.
-Každý uzol spravuje vlastný mempool; prijatie transakcie do tejto
-množiny nezaručuje jej potvrdenie.
+Po zostavení a podpísaní môže peňaženka odoslať transakciu do siete.
+Uzol ju overí a podľa vlastných pravidiel môže zaradiť do
+\emph{mempoolu}, lokálneho zoznamu transakcií čakajúcich na
+zaradenie do bloku. Odtiaľ ju môže uzol ďalej šíriť.
 
-Ťažiar vyberie transakcie do kandidátskeho bloku a hľadá hlavičku,
-ktorej hash neprevyšuje cieľ určený náročnosťou. Tento mechanizmus
-sa nazýva \emph{dôkaz práce} (angl. \emph{proof of work}, PoW).
+Ťažiar vyberie transakcie do kandidátskeho bloku a hľadá hlavičku
+s hashom najviac rovným cieľovej hodnote. Tento mechanizmus sa
+nazýva \emph{dôkaz práce} (angl. \emph{proof of work}, PoW).
 Úplné uzly následne overia blok aj jeho transakcie, ako znázorňuje
-obrázok~\ref{fig:transaction-lifecycle}. Úprava náročnosti smeruje
-k priemernému intervalu približne desať minút medzi blokmi,
-nie k pevnej lehote potvrdenia transakcie~\cite{bitcoinDevMining}.
+obrázok~\ref{fig:transaction-lifecycle}. Protokol upravuje náročnosť
+tak, aby priemerný čas medzi blokmi smeroval k desiatim minútam.
+Čas potvrdenia konkrétnej transakcie závisí od jej zaradenia
+do bloku.
 
 \begin{figure}[htbp]
   \centering
@@ -187,21 +176,20 @@ nie k pevnej lehote potvrdenia transakcie~\cite{bitcoinDevMining}.
     \draw[btcarrow] (b.west) -- (v.east);
     \draw[btcarrow] (v.west) -- (c.east);
   \end{tikzpicture}
-  \caption[Zaradenie transakcie do aktívneho reťazca]{Priebeh úspešného zaradenia transakcie do aktívneho reťazca.
-  Schéma nevyjadruje záruku prijatia ani pevné časové intervaly.
-  Vlastné spracovanie podľa~\cite{bitcoinDevP2P,bitcoinDevMining}.}
+  \caption{Od odoslania transakcie po jej prvé potvrdenie.}
   \label{fig:transaction-lifecycle}
 \end{figure}
 
 Spomedzi platných vetiev uzly vyberajú reťazec s najväčšou
-kumulatívnou prácou. Spoločné pravidlá overovania a výberu reťazca
+kumulatívnou prácou. Pri rovnakej práci na blok pripadá
+v príklade na obrázku~\ref{fig:bitcoin-confirmations} viac práce
+na vetvu A. Spoločné pravidlá overovania a výberu reťazca
 tvoria základ \emph{konsenzu}. Transakcia získava prvé
 \emph{potvrdenie} zaradením do aktívneho reťazca a každým
 nadväzujúcim blokom ďalšie. Pri zmene aktívnej vetvy, nazývanej
 \emph{reorganizácia}, môže potvrdenie stratiť
-(obrázok~\ref{fig:bitcoin-confirmations}). Viac potvrdení sťažuje
-nahradenie histórie, neposkytuje však absolútnu záruku
-nezvratnosti~\cite{nakamoto2008bitcoin,bitcoinDevBlockChain}.
+(obrázok~\ref{fig:bitcoin-confirmations}). S každým ďalším potvrdením rastie množstvo práce potrebnej
+na nahradenie príslušnej histórie~\cite{nakamoto2008bitcoin}.
 
 \begin{figure}[htbp]
   \centering
@@ -221,29 +209,17 @@ nezvratnosti~\cite{nakamoto2008bitcoin,bitcoinDevBlockChain}.
     \node[btcnote,text width=40mm] at (9.6,-1.2)
       {platný blok vetvy B\\mimo aktívneho reťazca};
   \end{tikzpicture}
-  \caption[Dočasné rozvetvenie blockchainu a potvrdenia]{Dočasné rozvetvenie blockchainu. V príklade majú bloky
-  rovnakú prácu, preto vetva A predstavuje väčšiu kumulatívnu prácu
-  než vetva B. Šípky označujú odkazy na predchádzajúce bloky.
-  Vlastné spracovanie podľa~\cite{bitcoinDevBlockChain}.}
+  \caption{Potvrdenia transakcie pri rozvetvení reťazca.}
   \label{fig:bitcoin-confirmations}
 \end{figure}
 
 \subsection{Veľkosť transakcií a poplatky}
 
-Pre výpočet poplatku $f$ bežnej transakcie platí
-\begin{equation}
-  f=\sum_{i=1}^{n}v_i^{\mathrm{in}}
-    -\sum_{j=1}^{m}v_j^{\mathrm{out}},
-  \label{eq:bitcoin-fee}
-\end{equation}
-kde $v_i^{\mathrm{in}}$ označujú hodnoty míňaných výstupov
-a $v_j^{\mathrm{out}}$ hodnoty nových výstupov.
-
 Obmedzená kapacita bloku ovplyvňuje výber transakcií aj ich poplatky.
 Pri mechanizme \emph{SegWit} (angl. \emph{Segregated Witness}) sa
 údaje svedkov potrebné na overenie minutia oddeľujú od základnej
-serializácie, z ktorej sa počíta \texttt{txid}. BIP~141~\cite{bip141}
-rozlišuje veľkosť v bajtoch, váhu $W$ a virtuálnu veľkosť $V$:
+serializácie, z ktorej sa počíta \texttt{txid}. Z veľkosti zápisu
+sa odvodzuje váha $W$ a virtuálna veľkosť $V$.
 \begin{equation}
   W=3B_{\mathrm{base}}+B_{\mathrm{total}},
   \qquad
@@ -255,66 +231,68 @@ a $B_{\mathrm{total}}$ veľkosť vrátane nich. Váha sa udáva vo váhových
 jednotkách (WU), virtuálna veľkosť vo virtuálnych bajtoch (vB).
 Limit váhy bloku je $4\,000\,000$ WU.
 
-Poplatok $f$ z rovnice~\eqref{eq:bitcoin-fee} treba odlišovať od
-poplatkovej sadzby $r=f/V$, vyjadrenej v satoshi na virtuálny bajt
-(sat/vB). Ťažiari môžu uprednostňovať transakcie s vyššou sadzbou,
-pričom rešpektujú závislosti od nepotvrdených predchodcov.
+Poplatkovú sadzbu získame vydelením poplatku virtuálnou veľkosťou
+transakcie. Vyjadruje sa v satoshi na virtuálny bajt (sat/vB).
+Ťažiari môžu pri výbere uprednostniť transakcie s vyššou sadzbou
+a zohľadniť ich závislosti od predchodcov.
 
 \subsection{Grafová reprezentácia transakcií}
 \label{sec:bitcoin-graph}
 
-Odkazy vstupov na staršie výstupy umožňujú zostaviť smerovaný graf
-$G=(V,E)$. V transakčnom grafe každý vrchol $T_i\in V$ predstavuje
-jednu transakciu. Hrana $(T_i,T_j)\in E$ existuje vtedy, keď
-transakcia $T_j$ míňa aspoň jeden výstup transakcie $T_i$.
-Jej smer vyjadruje závislosť minutia, od vytvorenia výstupu
-k jeho spotrebovaniu. Takto vytvorený graf platných transakcií
-je acyklický: transakcia nemôže priamo ani nepriamo minúť
-svoj vlastný budúci výstup.
+V transakčnom grafe predstavuje každý vrchol jednu transakciu.
+Hrana vedie od transakcie, ktorá vytvorila výstup, k transakcii,
+ktorá ho míňa. Vstup označuje konkrétny výstup dvojicou údajov,
+identifikátorom transakcie a indexom výstupu.
+Hrany tak sledujú poradie vytvorenia a minutia výstupov a tvoria
+orientovaný acyklický graf. Takéto zobrazenie transakcií používajú
+aj Weber a spoluautori v dátovom súbore Elliptic~\cite{weber2019elliptic}.
 
-\begin{figure}[htbp]
+Na obrázku~\ref{fig:bitcoin-transaction-graph} míňa transakcia $B$
+dva výstupy transakcie $A$. Transakcia $C$ míňa jej tretí výstup.
+V jednoduchom grafe dvojicu $A$ a $B$ spája jediná hrana.
+Podrobnejšia reprezentácia môže zachovať všetky odkazy aj hodnoty
+výstupov. Vrcholy na oboch koncoch hrany môžu patriť aj do toho
+istého bloku.
+
+\begin{center}
+  \begin{minipage}{\textwidth}
   \centering
+  \captionsetup{type=figure}
   \begin{tikzpicture}
-    \node[btcbox,fill=blue!6,text width=23mm,minimum height=12mm]
-      (a) at (0,1.2) {Transakcia $A$};
-    \node[btcbox,fill=blue!6,text width=23mm,minimum height=12mm]
-      (b) at (0,-1.2) {Transakcia $B$};
-    \node[btcbox,fill=black!4,text width=23mm,minimum height=14mm]
-      (t) at (4.8,0) {Transakcia $T$};
-    \node[btcbox,fill=blue!6,text width=23mm,minimum height=12mm]
-      (d) at (9.6,1.2) {Transakcia $D$};
-    \node[btcbox,fill=blue!6,text width=23mm,minimum height=12mm]
-      (e) at (9.6,-1.2) {Transakcia $E$};
-    \draw[btcarrow] (a.east) -- node[above,btcnote]
-      {výstup 0} (t.north west);
-    \draw[btcarrow] (b.east) -- node[below,btcnote]
-      {výstup 0} (t.south west);
-    \draw[btcarrow] (t.north east) -- node[above,btcnote]
-      {výstup 0} (d.west);
-    \draw[btcarrow] (t.south east) -- node[below,btcnote]
-      {výstup 1} (e.west);
+    \node[btcnote,font=\small\bfseries] at (6.2,0.8) {Záznamy transakcií};
+    \draw[rounded corners=2pt,fill=blue!6,draw=black!60]
+      (0,0.36) rectangle (3.6,-3.32);
+    \draw[rounded corners=2pt,fill=black!4,draw=black!60]
+      (7,0.36) rectangle (12.4,-1.79);
+    \draw[rounded corners=2pt,fill=black!4,draw=black!60]
+      (7,-2.06) rectangle (12.4,-3.32);
+    \node[btcnote,font=\small\bfseries] at (1.8,0) {Transakcia $A$};
+    \node[btcnote,font=\small\bfseries] at (9.7,0) {Transakcia $B$};
+    \node[btcnote,font=\small\bfseries] at (9.7,-2.37) {Transakcia $C$};
+    \node[btcnote] at (1.8,-0.67) {Výstup 0};
+    \node[btcnote] at (1.8,-1.35) {Výstup 1};
+    \node[btcnote] at (1.8,-2.98) {Výstup 2};
+    \node[btcnote] at (9.7,-0.67) {Vstup 0 odkazuje na $(A,0)$};
+    \node[btcnote] at (9.7,-1.35) {Vstup 1 odkazuje na $(A,1)$};
+    \node[btcnote] at (9.7,-2.98) {Vstup 0 odkazuje na $(A,2)$};
+    \foreach \y in {-0.67,-1.35,-2.98}
+      \draw[btcarrow] (3.6,\y) -- (7,\y);
+    \node[btcnote,font=\small\bfseries] at (6.2,-4.02)
+      {Jednoduchý transakčný graf};
+    \node[btcbox,fill=blue!6,minimum width=13mm] (a) at (3.5,-5.1) {$A$};
+    \node[btcbox,fill=black!4,minimum width=13mm] (b) at (9,-4.74) {$B$};
+    \node[btcbox,fill=black!4,minimum width=13mm] (c) at (9,-5.65) {$C$};
+    \draw[btcarrow] (a.east) -- node[above,btcnote] {výstupy 0 a 1} (b.west);
+    \draw[btcarrow] (a.east) -- node[below,btcnote] {výstup 2} (c.west);
   \end{tikzpicture}
-  \caption[Grafová reprezentácia transakčných väzieb]{Transakčný graf nadväzujúci na príklad UTXO.
-  Transakcia $T$ míňa výstupy transakcií $A$ a $B$; jej nové výstupy
-  neskôr míňajú transakcie $D$ a $E$. Každá šípka smeruje
-  od rodičovskej transakcie k potomkovi.}
+  \caption{Od odkazov vo vstupoch k hranám transakčného grafu.}
   \label{fig:bitcoin-transaction-graph}
-\end{figure}
+  \end{minipage}
+\end{center}
 
-Obrázok~\ref{fig:bitcoin-transaction-graph} ukazuje prechod od výstupov
-z obrázka~\ref{fig:utxo-example} k vrcholom grafu.
-Ak jedna transakcia míňa viac výstupov toho istého predchodcu,
-jednoduchý graf ich zlúči do jednej hrany. Detailnejšia reprezentácia
-môže zachovať jednotlivé odkazy aj ich hodnoty. Voľba reprezentácie
-tak ovplyvňuje napríklad počet hrán a interpretáciu stupňa vrcholu.
-Rodičovská a potomkovská transakcia pritom môžu byť súčasťou
-toho istého bloku; závislosť nevyžaduje rozdielnu výšku blokov.
-
-Transakčný graf sa odlišuje od grafu adries, v ktorom vrcholy
-predstavujú adresy. Pri viacerých vstupoch a výstupoch protokol
-neurčuje, ktorá časť konkrétneho vstupu financuje konkrétny výstup.
-Prevod transakcie na vážené hrany medzi adresami preto vyžaduje
-zvolené pravidlo priradenia hodnoty.
+V grafe adries sú vrcholmi adresy. Pri transakciách s viacerými
+vstupmi a výstupmi si priradenie čiastok k dvojiciam adries
+vyžaduje samostatné pravidlo.
 
 \subsection{Pranie špinavých peňazí a miešanie transakcií}
 \label{sec:bitcoin-laundering}
@@ -344,44 +322,32 @@ Obrázok~\ref{fig:bitcoin-peeling-chain} dopĺňa tento vzorec
 o následné spojenie oddelených častí v transakcii $K$, ktorá
 vytvorí výstup pre spoločnú adresu $a$. V modelovom scenári
 páchateľ ovláda zobrazené prevody a ďalšími transakciami sa pokúša
-sťažiť sledovanie nelegálnych výnosov. Odkazy medzi míňanými
-výstupmi pritom zostávajú verejné.
+sťažiť sledovanie výnosov. Šípky sledujú minutie výstupov
+medzi transakciami.
 
 \begin{center}
   \begin{minipage}{\textwidth}
   \centering
   \captionsetup{type=figure}
   \begin{tikzpicture}
-    \node[btcnote,text width=120mm] at (4.8,1.2)
-      {Modelový scenár: rozdelenie a opätovné spojenie nelegálnych výnosov};
-    \node[btcbox,font=\normalsize,fill=blue!6,text width=28mm,minimum height=14mm]
-      (t1) at (0,0) {Transakcia $T_1$};
-    \node[btcbox,font=\normalsize,fill=blue!6,text width=28mm,minimum height=14mm]
-      (t2) at (4.8,0) {Transakcia $T_2$};
-    \node[btcbox,font=\normalsize,fill=blue!6,text width=28mm,minimum height=14mm]
-      (t3) at (9.6,0) {Transakcia $T_3$};
-    \node[btcbox,font=\normalsize,fill=black!4,text width=28mm,minimum height=14mm]
-      (p1) at (0,-2.2) {Transakcia $P_1$};
-    \node[btcbox,font=\normalsize,fill=black!4,text width=28mm,minimum height=14mm]
-      (p2) at (4.8,-2.2) {Transakcia $P_2$};
-    \node[btcbox,font=\normalsize,fill=black!4,text width=28mm,minimum height=14mm]
-      (p3) at (9.6,-2.2) {Transakcia $P_3$};
-    \node[btcbox,font=\normalsize,fill=orange!10,text width=49mm,minimum height=22mm]
-      (k) at (4.8,-5) {Transakcia $K$\\3 vstupy, 1 výstup\\výstup pre spoločnú adresu $a$};
+    \node[btcnote,font=\small\bfseries] at (4.8,0.9)
+      {Postupné míňanie zvyšku};
+    \foreach \i/\x in {1/0,2/4.8,3/9.6} {
+      \node[btcbox,fill=blue!6,minimum width=20mm]
+        (t\i) at (\x,0) {$T_\i$};
+      \node[btcbox,fill=black!4,minimum width=20mm]
+        (p\i) at (\x,-1.75) {$P_\i$};
+      \draw[btcarrow] (t\i.south) -- node[right,btcnote] {platba} (p\i.north);
+    }
     \draw[btcarrow] (t1.east) -- node[above,btcnote]{zvyšok} (t2.west);
     \draw[btcarrow] (t2.east) -- node[above,btcnote]{zvyšok} (t3.west);
-    \draw[btcarrow] (t1.south) -- node[right,btcnote]{platba} (p1.north);
-    \draw[btcarrow] (t2.south) -- node[right,btcnote]{platba} (p2.north);
-    \draw[btcarrow] (t3.south) -- node[right,btcnote]{platba} (p3.north);
+    \node[btcbox,fill=orange!10,text width=42mm] (k) at (4.8,-3.8)
+      {$K$\\spojenie troch výstupov\\výstup pre adresu $a$};
     \draw[btcarrow] (p1.south) -- (k.north west);
     \draw[btcarrow] (p2.south) -- (k.north);
     \draw[btcarrow] (p3.south) -- (k.north east);
   \end{tikzpicture}
-  \caption[Peeling chain a následné spojenie oddelených výstupov]{Modelový scenár pokusu o zakrytie pôvodu prostriedkov.
-  Transakcie $P_i$ míňajú oddelené výstupy transakcií $T_i$;
-  transakcia $K$ následne spotrebuje ich výstupy a vytvorí jeden
-  výstup pre adresu $a$. Všetky šípky označujú závislosti minutia.
-  \emph{peeling chain} podľa~\cite{kappos2022peel}.}
+  \caption{Postupné oddeľovanie platieb a ich následné spojenie.}
   \label{fig:bitcoin-peeling-chain}
   \end{minipage}
 \end{center}
@@ -405,14 +371,15 @@ na praní špinavých peňazí.
 
 Od tohto modelu sa odlišuje \emph{CoinJoin}, pri ktorom viacerí
 účastníci zostavia jednu transakciu s vlastnými vstupmi a dohodnutými
-výstupmi.
+výstupmi. Rovnaké hodnoty výstupov na obrázku~\ref{fig:bitcoin-coinjoin}
+pripúšťajú viac možných priradení k účastníkom.
 
 \begin{center}
   \begin{minipage}{\textwidth}
   \centering
   \captionsetup{type=figure}
   \begin{tikzpicture}
-    \node[btcnote] at (0,2.65) {Míňané UTXO};
+    \node[btcnote] at (0,2.65) {Míňané výstupy};
     \node[btcnote] at (9.6,2.65) {Nové výstupy};
     \node[btcbox,fill=blue!6,text width=29mm,minimum height=13mm]
       (ia) at (0,1.5) {Účastník $A$\\0,101 BTC};
@@ -437,10 +404,7 @@ výstupmi.
     \node[btcnote,text width=110mm] at (4.8,-3.1)
       {Poplatok: $0{,}303-0{,}300=0{,}003$ BTC.};
   \end{tikzpicture}
-  \caption[Spoločná transakcia typu CoinJoin]{Zjednodušený príklad CoinJoin s tromi účastníkmi.
-  Šípky znázorňujú spotrebovanie UTXO a vznik výstupov, nie
-  jednoznačné platby $A\to X$, $B\to Y$, $C\to Z$.
-  ~\cite{ruffing2014coinshuffle,stutz2022coinjoin}.}
+  \caption[Spoločná transakcia CoinJoin s tromi účastníkmi]{Spoločná transakcia CoinJoin s tromi účastníkmi~\cite{ruffing2014coinshuffle,stutz2022coinjoin}.}
   \label{fig:bitcoin-coinjoin}
   \end{minipage}
 \end{center}
@@ -453,11 +417,12 @@ Transactions~\cite{teleportCoinSwap} opisuje princíp takejto výmeny
 v rámci Bitcoinu. Ide o odlišný mechanizmus od spoločnej
 transakcie CoinJoin.
 
-Používanie týchto nástrojov neposkytuje záruku anonymity.
-Stütz a spoluautori~\cite{stutz2022coinjoin} ukázali, že analýza
+Súkromie pri miešaní závisí aj od aktivity účastníkov mimo
+spoločnej transakcie. Stütz a spoluautori~\cite{stutz2022coinjoin} ukázali, že analýza
 transakcií pred miešaním a po ňom môže zúžiť množinu možných
 priradení. CoinJoin zároveň slúži aj na ochranu finančného súkromia.
-FATF preto zdôrazňuje potrebu hodnotiť rizikové indikátory v kontexte.~\cite{fatf2020redflags}.
+FATF odporúča hodnotiť rizikové indikátory spolu s okolnosťami
+jednotlivých prevodov~\cite{fatf2020redflags}.
 
 \subsection{Podvody a ďalšie zdroje nelegálnych výnosov}
 \label{sec:bitcoin-fraud}
@@ -484,7 +449,7 @@ aby získali prístupové údaje alebo podnietili obeť k platbe.
 Falošná technická podpora môže požadovať súkromný kľúč alebo
 obnovovaciu frázu, z ktorej peňaženka odvodzuje kľúče.
 Útočník so získanými kľúčmi môže vytvoriť platný podpis a previesť
-dostupné prostriedky.~\cite{bitcoinScams,bitcoinDevTransactions}.
+dostupné prostriedky.
 
 Ďalším zdrojom nelegálnych výnosov je \emph{ransomvér}, pri ktorom
 útočníci požadujú výkupné, napríklad za obnovenie prístupu
@@ -522,14 +487,14 @@ kryptomien~\cite{europol2022crypto}.
     \draw[btcarrow] (other.east) -- (collect.south west);
     \draw[btcarrow] (collect.east) -- (next.west);
   \end{tikzpicture}
-  \caption[Investičný podvod a jeho transakčná stopa]{Analytik môže
-  sledovať prijaté platby, ich spájanie a následné minutie výstupov,
-    z týchto väzieb však priamo nevyčíta obsah komunikácie s obeťou.
-    Opis postupu podvodu vyžaduje aj dôkazy mimo blockchainu,
-    napríklad záznam komunikácie alebo údaje zaistenej platformy.\cite{fbiCryptoInvestmentFraud,bartoletti2018ponzi}.}
+  \caption[Transakčná stopa investičného podvodu]{Transakčná stopa investičného podvodu~\cite{fbiCryptoInvestmentFraud,bartoletti2018ponzi}.}
   \label{fig:bitcoin-fraud-observability}
   \end{minipage}
 \end{center}
+
+Platby na obrázku~\ref{fig:bitcoin-fraud-observability} možno sledovať
+cez verejné transakčné väzby. Súvislosť platby s podvodom pomáha doložiť
+komunikácia s obeťou alebo záznamy prevádzkovateľa platformy.
 
 \subsection{Verejné údaje a hranice ich interpretácie}
 \label{sec:bitcoin-public-data}
@@ -543,7 +508,7 @@ transakcií, blokov a údajov o adresách~\cite{trezorBlockbook}.
 Časové údaje je potrebné interpretovať podľa ich pôvodu.
 Výška bloku vyjadruje jeho poradie v konkrétnom reťazci.
 Časovú značku v hlavičke určuje ťažiar v medziach pravidiel
-protokolu a vzťahuje sa na blok ako celok.~\cite{bitcoinDevBlockReference}.
+protokolu a vzťahuje sa na blok ako celok.
 
 Bitcoin poskytuje pseudonymné záznamy. Meiklejohn
 a spoluautori~\cite{meiklejohn2016fistful} ukazujú, ako možno transakčné
@@ -554,23 +519,16 @@ závisí od použitých predpokladov a kvality externých údajov.
 \section{Dátový súbor Elliptic a jeho využitie pri klasifikácii transakcií}
 \label{sec:elliptic}
 
-Elliptic Bitcoin Dataset poskytuje verejný podklad na výskum
-klasifikácie bitcoinových transakcií. Weber
-a spoluautori~\cite{weber2019elliptic} ho zverejnili v roku 2019
-pre výskum opatrení proti praniu špinavých peňazí, označovaných
-skratkou AML z anglického \emph{anti-money laundering}.
-Transakcie opísali číselnými charakteristikami a pre časť záznamov
-sprístupnili označenie triedy. Takto pripravené údaje umožňujú
-skúmať vzťah medzi pozorovateľnými vlastnosťami transakcie
-a jej zaradením do triedy \emph{licit} alebo \emph{illicit}.
+Weber a spoluautori~\cite{weber2019elliptic} zverejnili dátový
+súbor Elliptic v roku 2019 na výskum boja proti praniu špinavých
+peňazí (AML, z angl. \emph{anti-money laundering}). Transakcie
+opísali číselnými príznakmi a časť z nich označili triedami
+\emph{licit} a \emph{illicit}.
 
-Pre vytvorenie programu, ktorý vyhodnotí transakciu podľa jej
-verejného identifikátora, treba poznať pôvod záznamov a spôsob
-výpočtu ich charakteristík. Výskum Šafářa
-a spoluautorov~\cite{safar2026elliptic} objasnil význam väčšiny
-príznakov Elliptic a možnosti prepojenia s blockchainom.
-Tieto poznatky tvoria východisko pre návrh vlastného dátového
-súboru s overiteľnými transakciami a zdokumentovanými príznakmi.
+Pri analýze ďalších blokov potrebujeme transakcie opísať spôsobom,
+ktorý zodpovedá vstupom naučeného modelu. Šafář a spoluautori
+objasnili význam väčšiny príznakov Elliptic a ukázali, ako ich
+prepojiť s verejnými záznamami~\cite{safar2026elliptic}.
 
 \tikzset{
   ellbox/.style={draw=black!65,rounded corners=2pt,
@@ -583,19 +541,16 @@ súboru s overiteľnými transakciami a zdokumentovanými príznakmi.
 
 \subsection{Pôvod, štruktúra a označenia transakcií}
 
-Elliptic spája graf transakcií s dvoma tabuľkami.
-Súbor \nolinkurl{elliptic_txs_features.csv} priraďuje každej
-transakcii interný identifikátor \texttt{txId} a 166 príznakov.
-\emph{Príznak} predstavuje číselnú charakteristiku, napríklad
-počet vstupov alebo poplatok.
+Údaje sú rozdelené do troch súborov. Súbor
+\nolinkurl{elliptic_txs_features.csv} obsahuje pre každú transakciu
+interný identifikátor \texttt{txId} a 166 príznakov. Príznakom je
+napríklad počet vstupov alebo výška poplatku.
 
-Súbor \nolinkurl{elliptic_txs_edgelist.csv} obsahuje dvojice
-identifikátorov spojených orientovanou hranou. Hrana vedie
-od transakcie, ktorá vytvorila výstup, k transakcii, ktorá ho míňa.
-Súbor \nolinkurl{elliptic_txs_classes.csv} priraďuje identifikátorom
-označenia \texttt{1}, \texttt{2} alebo \texttt{unknown}.
-Obrázok~\ref{fig:elliptic-file-structure} znázorňuje spojenie
-týchto údajov prostredníctvom spoločného identifikátora.
+V súbore \nolinkurl{elliptic_txs_edgelist.csv} sú dvojice identifikátorov,
+ktoré určujú orientované hrany medzi transakciami.
+Súbor \nolinkurl{elliptic_txs_classes.csv} obsahuje triedy.
+Rovnaký identifikátor spája všetky tri súbory, ako ukazuje
+obrázok~\ref{fig:elliptic-file-structure}.
 
 \begin{figure}[htbp]
   \centering
@@ -613,19 +568,16 @@ týchto údajov prostredníctvom spoločného identifikátora.
     \draw[ellarrow] (y.south) -- (d.north);
     \draw[ellarrow] (e.south) -- (d.north east);
   \end{tikzpicture}
-  \caption[Prepojenie vstupných súborov Elliptic]{Prepojenie troch
-  vstupných súborov Elliptic. Identifikátor \texttt{txId} slúži
-  na spojenie riadkov tabuliek s vrcholmi grafu.~\cite{ellipticDataset}.}
+  \caption[Prepojenie súborov Elliptic cez identifikátor \texttt{txId}]{Prepojenie súborov Elliptic cez identifikátor \texttt{txId}~\cite{ellipticDataset}.}
   \label{fig:elliptic-file-structure}
 \end{figure}
 
-Označenie \texttt{1} zodpovedá triede \emph{illicit},
-označenie \texttt{2} triede \emph{licit}.
-Pôvodní autori odvodili triedy z kategórie entity iniciujúcej
-transakciu. Medzi licitné kategórie zaradili napríklad burzy
-a poskytovateľov peňaženiek; medzi ilicitné podvody, ransomvér
-a Ponziho schémy. Hodnota \texttt{unknown} označuje záznam,
-pre ktorý autori triedu nezverejnili~\cite{weber2019elliptic}.
+Triedu autori odvodili od kategórie subjektu, ktorý transakciu
+inicioval. Označenie \texttt{1} (\emph{illicit}) zahŕňa napríklad
+transakcie spojené s podvodmi alebo ransomvérom. Označenie
+\texttt{2} (\emph{licit}) sa používa napríklad pri burzách
+a poskytovateľoch peňaženiek. Hodnota \texttt{unknown}
+označuje transakcie s neurčenou triedou~\cite{weber2019elliptic}.
 
 \begin{table}[htbp]
   \centering
@@ -648,22 +600,16 @@ pre ktorý autori triedu nezverejnili~\cite{weber2019elliptic}.
   \end{tabular}
 \end{table}
 
-V navrhovanom riešení budú základom učenia záznamy
-s označením \emph{licit} alebo \emph{illicit}. Na učenie a vyhodnotenie klasifikácie
-\texttt{unknown} zostáva 46~564 označených transakcií,
-z ktorých približne 9,76~\% patrí do triedy \emph{illicit}.
-Neoznačené transakcie môžu zostať súčasťou skúmaného grafového
-okolia; pri učení sa však použijú iba dostupné cieľové triedy.
-Tým sa zachová rozdiel medzi chýbajúcim označením a licitným
-záznamom.
+Z 46~564 označených transakcií patrí približne 9,76~\% do triedy
+\emph{illicit}. Správnosť klasifikácie možno merať na označených
+príkladoch. Záznamy \texttt{unknown} môžu dopĺňať grafové okolie
+podľa zvoleného prístupu.
 
 \subsection{Rozšírenia dátového súboru Elliptic}
 
-Rozšírenia Elliptic sa líšia rozsahom aj jednotkou klasifikácie.
-Obrázky~\ref{fig:elliptic-original-view}--\ref{fig:elliptic2-subgraph-view}
-porovnávajú ich grafové reprezentácie na modelových príkladoch
-s ilustračnými identifikátormi a označeniami. V pôvodnom
-súbore sa klasifikuje jednotlivá transakcia.
+Rozšírenia Elliptic sa líšia najmä tým, čo je predmetom klasifikácie.
+V pôvodnom súbore je to jednotlivá transakcia. Obrázok~\ref{fig:elliptic-original-view} ukazuje, ako sa k vrcholu
+transakčného grafu pripájajú jeho príznaky a označenie triedy.
 
 \begin{center}
   \begin{minipage}{\textwidth}
@@ -697,25 +643,18 @@ súbore sa klasifikuje jednotlivá transakcia.
     \node[ellnote] at (4.4,-2.45)
       {L: \emph{licit} \qquad I: \emph{illicit} \qquad ?: \texttt{unknown}};
   \end{tikzpicture}
-  \caption[Transakčný pohľad v pôvodnom Elliptic]{Pôvodný Elliptic:
-  vrcholy predstavujú transakcie s príznakmi a označeniami.
-  Šípky vyjadrujú míňanie výstupov, čiarkovaná čiara pripojený
-  opis záznamu.
-  Vlastné spracovanie podľa~\cite{weber2019elliptic}.}
+  \caption{Transakcie, príznaky a triedy v pôvodnom Elliptic.}
   \label{fig:elliptic-original-view}
   \end{minipage}
 \end{center}
 
-Elmougy
-a Liu~\cite{elmougy2023ellipticpp} vytvorili \emph{Elliptic++},
-ktorý zachováva pôvodný súbor transakcií a rozširuje ich opis
-zo 166 na 183 príznakov. Pridali aj údaje o 822~942 adresách
-s 56 adresnými príznakmi a väzby medzi adresami a transakciami.
-Výskumníci tak môžu skúmať transakčný aj adresný pohľad na pohyb
-prostriedkov. Obrázok~\ref{fig:elliptic-plusplus-view} prepája
-transakčný graf s pohľadom, v ktorom sú adresy samostatnými
-vrcholmi. Rovnaké označenia $T_i$ v oboch častiach predstavujú
-tie isté transakcie.
+Elmougy a Liu rozšírili pôvodný Elliptic zo 166 na 183
+transakčných príznakov~\cite{elmougy2023ellipticpp}.
+Ich súbor \emph{Elliptic++} opisuje aj 822~942 adries
+s 56 príznakmi na adresu. Autori pracujú s grafmi transakcií,
+adries, väzieb medzi adresami a transakciami a s grafom entít.
+Obrázok~\ref{fig:elliptic-plusplus-view} ukazuje dva z týchto
+pohľadov. V oboch označuje $T_i$ tú istú transakciu.
 
 \begin{center}
   \begin{minipage}{\textwidth}
@@ -756,26 +695,17 @@ tie isté transakcie.
     \node[ellnote] at (6,-6.05)
       {kruh: adresa $a_i$ \qquad obdĺžnik: transakcia $T_i$};
   \end{tikzpicture}
-  \caption[Dva prepojené pohľady v Elliptic++]{Dva prepojené
-  pohľady v Elliptic++ na rovnaký modelový príklad. Hore sú
-  väzby medzi transakciami, dole aj adresy zapojené do ich vstupov
-  a výstupov. Šípka $a_i\to T_j$ označuje vstupnú adresu,
-  šípka $T_j\to a_i$ výstupnú adresu. Transakcia $T_4$ tak
-  nadväzuje na $T_2$ a $T_3$ prostredníctvom adries $a_6$ a $a_7$.
-  Vlastné spracovanie podľa~\cite{elmougy2023ellipticpp}.}
+  \caption{Transakčný a adresný pohľad v Elliptic++.}
   \label{fig:elliptic-plusplus-view}
   \end{minipage}
 \end{center}
 
-Bellei a spoluautori~\cite{bellei2024elliptic2} predstavili
-\emph{Elliptic2}, v ktorom vrcholy zastupujú klastre adries
-a hrany transakcie medzi nimi. Autori označili približne
-122 tisíc podgrafov triedami \emph{licit} a \emph{suspicious}.
-Úloha sa preto presúva od posúdenia jednotlivého vrcholu
-k posúdeniu skupiny previazaných prevodov
-(obrázok~\ref{fig:elliptic2-subgraph-view}). Klastre združujú
-adresy s predpokladaným spoločným ovládaním; ich vytvorenie
-vychádza z heuristík a ďalších analytických podkladov.
+V súbore \emph{Elliptic2} predstavuje vrchol zoskupenie adries
+s predpokladaným spoločným ovládaním. Hrany zachytávajú transakcie
+medzi týmito zoskupeniami. Bellei a spoluautori označili približne
+122 tisíc podgrafov triedami \emph{licit} a \emph{suspicious}~\cite{bellei2024elliptic2}. Trieda sa tu vzťahuje na celú skupinu
+súvisiacich prevodov vyznačenú rámčekom na
+obrázku~\ref{fig:elliptic2-subgraph-view}.
 
 \begin{center}
   \begin{minipage}{\textwidth}
@@ -810,13 +740,7 @@ vychádza z heuristík a ďalších analytických podkladov.
     \node[ellnote] at (4.5,-3.4)
       {cieľové označenie patrí celému podgrafu $S_i$};
   \end{tikzpicture}
-  \caption[Podgrafy ako jednotky klasifikácie v Elliptic2]{Podgrafy
-  ako jednotky klasifikácie v Elliptic2. Každý vrchol zastupuje
-  klaster adries, nie samostatnú transakciu. Rámce vyznačujú dva
-  označené podgrafy v širšom grafe; ich farba vyjadruje triedu
-  podgrafu a neurčuje označenia jednotlivých klastrov.
-  Adresy uvedené vo vrcholoch ilustrujú ich zoskupenie.
-  Vlastné spracovanie podľa~\cite{bellei2024elliptic2}.}
+  \caption{Dva označené podgrafy v Elliptic2.}
   \label{fig:elliptic2-subgraph-view}
   \end{minipage}
 \end{center}
@@ -840,29 +764,22 @@ vychádza z heuristík a ďalších analytických podkladov.
   \end{tabularx}
 \end{table}
 
-Pre túto prácu zostáva východiskom klasický Elliptic.
-Jeho transakčné označenia a dostupné prepojenie s verejným
-blockchainom zodpovedajú zámeru zostaviť vlastnú reprezentáciu
-jednotlivých transakcií. Rozšírenia poskytujú kontext pre návrh
-príznakov a grafových okolí; ich odlišné jednotky klasifikácie
-treba zohľadniť pri prípadnom porovnávaní výsledkov.
+Pôvodný Elliptic vyhovuje nášmu zámeru tým, že triedy priraďuje
+jednotlivým transakciám. Rozšírenia ukazujú, ako možno ich opis
+doplniť o údaje o adresách alebo o širšom okolí.
 
 \subsection{Časový rozsah a transakčný graf}
 
-Elliptic pokrýva obdobie od 1. januára 2016 do 2. októbra 2017
-prostredníctvom 49 časových podgrafov. Časové kroky sú od seba
-vzdialené približne dva týždne, pričom transakcie jedného kroku
-pochádzajú z intervalu kratšieho než tri hodiny.
-Autori tak zachytili krátke úseky aktivity v rôznych obdobiach.
-Medzi jednotlivými krokmi v zverejnenom grafe chýbajú
-hrany~\cite{weber2019elliptic,safar2026elliptic}.
+Elliptic zachytáva obdobie od 1. januára 2016 do 2. októbra 2017
+v 49 časových krokoch. Kroky sú od seba vzdialené približne dva
+týždne. Každý zachytáva transakcie z intervalu kratšieho než tri
+hodiny a hrany medzi transakciami v tomto
+intervale~\cite{weber2019elliptic,safar2026elliptic}.
 
-Časový výber obmedzuje dostupné okolie transakcie.
-Jej predchodca môže ležať mimo zachovaného intervalu, hoci jeho
-výstup skúmaná transakcia míňa. V uloženom grafe potom chýba
-príslušný vrchol aj hrana.
-Obrázok~\ref{fig:elliptic-window} ukazuje tento prípad
-na dvojici zachovaných transakcií $B$ a $C$.
+Verejný blockchain zachytáva aj väzby presahujúce jednotlivé časové
+kroky. Na obrázku~\ref{fig:elliptic-window} sú v dátovom súbore
+zachytené transakcie $B$ a $C$. Čiarkované šípky ukazujú ich väzby
+s predchodcom $A$ a nasledovníkom $D$ mimo výberu.
 
 \begin{figure}[htbp]
   \centering
@@ -882,76 +799,64 @@ na dvojici zachovaných transakcií $B$ a $C$.
     \node[ellnote,text width=28mm] at (9.6,-1.4) {neskorší potomok\\mimo výberu};
     \node[ellnote] at (4.8,-2.15) {v dátovom súbore zostáva iba hrana $B\to C$};
   \end{tikzpicture}
-  \caption[Orezanie transakčného okolia časovým výberom]{Orezanie
-  transakčného okolia časovým výberom. Čiarkované väzby existujú
-  v blockchaine, ale pri vynechaní vrcholov $A$ a $D$ sa do podgrafu
-  neuložia. Vrchol $B$ preto nemá uloženého predchodcu.
-  Vlastné spracovanie podľa~\cite{safar2026elliptic}.}
+  \caption{Transakčné väzby v časovom okne Elliptic.}
   \label{fig:elliptic-window}
 \end{figure}
 
-Pri získavaní údajov z blockchainu možno dohľadať aj predchodcov
-mimo výberu Elliptic. Rozsah takto obnoveného okolia ovplyvní
-výpočet grafových príznakov. Počet hrán v dodanom súbore treba
-preto interpretovať vzhľadom na hranice výberu: nulový vstupný
-stupeň označuje absenciu uloženého predchodcu a môže sa vyskytnúť
-aj pri bežnej transakcii.
+Dohľadaním transakcií mimo výberu možno doplniť grafové okolie
+a spresniť údaje o počte či vlastnostiach susedov. Napríklad
+vrchol $B$ má v zachytenom grafe nulový vstupný stupeň, hoci
+v blockchaine míňa výstup staršej transakcie $A$.
 
-Obrázok~\ref{fig:elliptic-graph-overview} poskytuje ilustráciu
-šiestich časových krokov pôvodného súboru. Zobrazuje 28~221
-transakcií a 31~653 hrán; tento výber slúži na ukážku štruktúry
-grafu. Vodorovné usporiadanie rešpektuje topologické vrstvy
-a zvislá poloha rozmiestňuje vrcholy v rámci obrázka.
-Farba vyjadruje označenie Elliptic; sivé vrcholy sú neoznačené.
+Na obrázku~\ref{fig:elliptic-graph-overview} je zobrazených
+28~221 transakcií a 31~653 hrán zo šiestich časových krokov.
+Vodorovná poloha sleduje vrstvy grafu a farba vyjadruje triedu.
+Sivé vrcholy patria transakciám s označením \texttt{unknown}.
 
 \begin{center}
   \begin{minipage}{\textwidth}
   \centering
   \captionsetup{type=figure}
   \includegraphics[width=\textwidth]{img/generated/elliptic_graph_overview.pdf}
-  \caption[Príklad transakčných podgrafov Elliptic]{Transakčné
-  podgrafy časových krokov 20, 29, 30, 32, 35 a 42.
-  Body a spojenia predstavujú skutočné záznamy a hrany. Vlastné spracovanie z pôvodných
-  súborov Elliptic.}
+  \caption{Podgrafy Elliptic v krokoch 20, 29, 30, 32, 35 a 42.}
   \label{fig:elliptic-graph-overview}
   \end{minipage}
 \end{center}
 
 \subsection{Prepojenie záznamov s verejným blockchainom}
 
-Interný identifikátor \texttt{txId} spája záznamy v súboroch
-Elliptic. Verejný bitcoinový identifikátor \texttt{txid}
-má podobu 64 hexadecimálnych znakov a umožňuje vyhľadať konkrétnu
-transakciu v blockchaine. Na prechod medzi nimi treba vytvoriť
-alebo overiť mapovanie.
+Interný identifikátor \texttt{txId} spája údaje v súboroch
+Elliptic. Transakciu v blockchaine vyhľadávame podľa verejného
+identifikátora \texttt{txid}, ktorý má podobu 64 hexadecimálnych
+znakov. Tabuľka priradení umožňuje prejsť medzi oboma záznamami.
 
-Alex Benzik zverejnil mapovanie približne 99,5~\% transakcií
-Elliptic~\cite{ellipticMapping}.
-Šafář a spoluautori ho použili ako východisko svojho auditu.
-Pre známe dvojice získali údaje cez Blockbook a porovnali
-vypočítané charakteristiky s číselnými stĺpcami Elliptic.
-Takto overovali význam príznakov aj ich väzbu na verejné
-záznamy~\cite{safar2026elliptic}.
+Alex Benzik zverejnil priradenia pre približne 99,5~\% transakcií
+Elliptic~\cite{ellipticMapping}. Šafář a spoluautori použili tieto
+dvojice pri audite. Cez Blockbook získali údaje o transakciách,
+vypočítali z nich príznaky a porovnali ich s hodnotami v
+Elliptic~\cite{safar2026elliptic}. Princíp vyhľadávania ukazuje
+obrázok~\ref{fig:elliptic-mapping}.
 
 \begin{center}
   \begin{minipage}{\textwidth}
   \centering
   \captionsetup{type=figure}
   \begin{tikzpicture}
-    \node[ellbox,fill=blue!6,text width=32mm,minimum height=19mm]
-      (i) at (0,0) {Elliptic\\číselné \texttt{txId}};
-    \node[ellbox,fill=black!4,text width=39mm,minimum height=19mm]
-      (m) at (4.8,0) {Kandidáti v blokoch\\porovnanie príznakov\\a transakčných väzieb};
-    \node[ellbox,fill=blue!6,text width=32mm,minimum height=19mm]
-      (h) at (9.6,0) {Verejná transakcia\\64-znakové \texttt{txid}};
-    \draw[ellarrow] (i.east) -- (m.west);
-    \draw[ellarrow] (m.east) -- (h.west);
+    \node[ellbox,fill=blue!6,text width=31mm,minimum height=20mm]
+      (i) at (0,0) {Záznam Elliptic\\interné \texttt{txId}};
+    \node[ellbox,fill=black!4,text width=36mm,minimum height=20mm]
+      (m) at (4.8,0) {Tabuľka priradení\\\texttt{txId} $\leftrightarrow$ \texttt{txid}\\zdroj a overenie};
+    \node[ellbox,fill=blue!6,text width=31mm,minimum height=20mm]
+      (h) at (9.6,0) {Verejná transakcia\\bitcoinové \texttt{txid}};
+    \draw[{Latex[length=2mm]}-{Latex[length=2mm]},draw=black!75,line width=0.7pt]
+      (i.east) -- (m.west);
+    \draw[{Latex[length=2mm]}-{Latex[length=2mm]},draw=black!75,line width=0.7pt]
+      (m.east) -- (h.west);
+    \node[ellnote,text width=110mm] at (4.8,-1.8)
+      {priradenie overujeme porovnaním verejných údajov,
+       obnovených príznakov a transakčných väzieb};
   \end{tikzpicture}
-  \caption[Mapovanie identifikátorov Elliptic na verejné transakcie]{Mapovanie
-  identifikátorov Elliptic na verejné transakcie.
-  Porovnanie údajov a transakčných väzieb umožňuje overiť
-  zhodu medzi interným záznamom a verejnou transakciou.
-  Vlastné spracovanie podľa~\cite{safar2026elliptic}.}
+  \caption{Priradenie identifikátorov Elliptic a blockchainu.}
   \label{fig:elliptic-mapping}
   \end{minipage}
 \end{center}
@@ -972,49 +877,44 @@ $x_{ik}=\mu_k+\sigma_k z_{ik}$. Pri celočíselných počtoch
 autori využili odstupy medzi hodnotami a pri koreláciách
 známe ohraničenie ich rozsahu.
 
-Zo známych transakcií následne odvodili kandidátske bloky
-pre každý časový krok. V týchto blokoch prešli transakcie,
-vypočítali obnovené príznaky vrátane adresných štatistík
-k bloku 575~059 a porovnali ich s denormalizovanými záznamami.
-Pri kolíziách rovnakých vektorov priradili identifikátory
-podľa pôvodného usporiadania záznamov.
-Takéto prípady vyžadujú odlíšenie od zhôd, pri ktorých
-charakteristiky určujú jediného kandidáta.
+Zo známych transakcií autori odvodili kandidátske bloky pre
+jednotlivé časové kroky. Pre transakcie v týchto blokoch vypočítali
+obnovené príznaky a porovnali ich s hodnotami po spätnej úprave
+mierky. Pri zhodných vektoroch použili na priradenie identifikátorov
+aj poradie záznamov. V takom prípade rovnakým hodnotám príznakov
+zodpovedá viac kandidátov.
 
-Autori uvádzajú, že identifikovali všetky transakcie a pri
-spätnom výpočte dosiahli zhodu všetkých obnovených príznakov.
-Úplné mapovanie nezverejnili; v diskusii to odôvodňujú svojím
-výkladom licenčných podmienok Elliptic.
-Výsledky ich analýzy poskytujú podklad na overovanie zhôd
-a rekonštrukciu údajov vo vlastnom riešení.
+Autori uvádzajú, že identifikovali všetky transakcie a pri spätnom
+výpočte získali zhodné hodnoty obnovených príznakov. Dostupné
+priradenia preto navrhujeme overiť na vzorke verejných záznamov.
+Pokrytie overených dvojíc potom určí, akú časť súboru možno takto
+spracovať~\cite{safar2026elliptic}.
 
-\subsection{Príznaky transakcií a možnosti ich rozšírenia}
+\subsection{Príznaky transakcií a ich využitie v modeli}
 
-Pôvodný Elliptic obsahuje 94 príznakov označených ako lokálne
-a 72 agregovaných príznakov susedných transakcií.
-Šafář a spoluautori zistili, že lokálna skupina zahŕňa aj
-súhrny histórie vstupných a výstupných adries.
-Obnovili význam 151 zo 166 príznakov a ich definície
-zdokumentovali v sprievodnom
-repozitári~\cite{deanonymizedFeatures}.
-Tabuľka~\ref{tab:elliptic-features} rozlišuje zdroje týchto údajov.
+Pôvodný Elliptic obsahuje 94 lokálnych a 72 agregovaných príznakov.
+Šafář a spoluautori zistili, že lokálna skupina zahŕňa aj históriu
+zapojených adries. Význam 151 zo 166 príznakov opísali v sprievodnom
+repozitári~\cite{safar2026elliptic,deanonymizedFeatures}.
+Tabuľka~\ref{tab:elliptic-features} rozlišuje údaje o samotnej
+transakcii, adresách a susedných transakciách.
 
 \begin{table}[htbp]
   \centering
   \small
   \caption[Skupiny a rozsah obnovených príznakov]{Skupiny príznakov
-  a rozsah obnovenej sémantiky podľa auditu~\cite{safar2026elliptic,deanonymizedFeatures}.
-  Číslovanie nezahŕňa stĺpec \texttt{txId}.}
+  a rozsah ich obnoveného významu podľa~\cite{safar2026elliptic,deanonymizedFeatures}.
+  Prvým príznakom je časový krok.}
   \label{tab:elliptic-features}
   \begin{tabularx}{\textwidth}{lXr}
     \toprule
-    Rozsah & Zdroj informácie a príklady & Obnovené \\
+    Rozsah & Zdroj údajov & Obnovené \\
     \midrule
     1--22 & časový krok, poplatok, počty a hodnoty vstupov
       a výstupov & 19 z 22 \\
-    23--94 & prijatá a odoslaná hodnota, zostatok,
-      počet transakcií a životnosť adries & 72 zo 72 \\
-    95--166 & hodnoty, bloky, poplatky a počty vstupov
+    23--94 & prijaté a odoslané hodnoty, zostatok,
+      aktivita a životnosť adries & 72 zo 72 \\
+    95--166 & súhrny hodnôt, blokov, poplatkov a počtov vstupov
       a výstupov susedných transakcií & 60 zo 72 \\
     \midrule
     spolu & & 151 zo 166 \\
@@ -1022,184 +922,191 @@ Tabuľka~\ref{tab:elliptic-features} rozlišuje zdroje týchto údajov.
   \end{tabularx}
 \end{table}
 
-Pri opise transakcií vychádzame z počtov vstupov a výstupov,
-ich hodnôt a poplatku vypočítaného podľa vzťahu~\eqref{eq:bitcoin-fee}. Medzi
-obnovené príznaky patria minimum, maximum, priemer a smerodajná
-odchýlka hodnôt. Pearsonov a Spearmanov koeficient vyjadrujú vzťah
-hodnôt k pozičným indexom vstupov alebo výstupov, čím zachytávajú
-ich usporiadanie v transakcii. Význam stĺpcov 4, 8 a 16 zostáva neurčený.
+Medzi príznaky patria počty vstupov a výstupov, ich hodnoty
+a poplatok. Na opis hodnôt slúži napríklad priemer alebo smerodajná
+odchýlka. Pearsonov a Spearmanov koeficient zachytávajú vzťah
+hodnôt k poradiu položiek. Adresné štatistiky sa počítajú osobitne
+pre vstupné a výstupné adresy. Pri transakčnom okolí sa rozlišujú
+predchodcovia a nasledovníci.
 
-Adresné charakteristiky zahŕňajú históriu adries zapojených do transakcie.
-Autori identifikovali celkovú prijatú a odoslanú hodnotu, dostupný zostatok,
-počty prichádzajúcich a odchádzajúcich transakcií a životnosť adresy.
-Každú z týchto vlastností agregujú pre vstupné a výstupné adresy pomocou minima,
-maxima, smerodajnej odchýlky, priemeru a Pearsonovho a Spearmanovho koeficientu.
-Táto skupina obsahuje 72 príznakov.
+V publikovanom opise zostáva otvorený význam príznakov s indexmi
+4, 8, 16, 113--118 a 149--154~\cite{deanonymizedFeatures}.
+Pre analýzu nových blokov navrhujeme vychádzať z príznakov,
+ktoré sa dajú vypočítať z verejných údajov. Možnosťou je porovnať
+ich menší výber s pôvodnou sadou a posúdiť, koľko informácií
+prináša vzhľadom na náklady na získanie údajov.
 
-Pri susedných transakciách autori obnovili súhrny objemu, výšky bloku, poplatku a
-počtov vstupov a výstupov. Počítajú ich osobitne pre predchodcov a nasledovníkov,
-pričom do výpočtu zahŕňajú aj transakcie mimo uloženého grafu Elliptic. Význam ďalších
-dvanástich príznakov v rozsahoch 113--118 a 149--154 zostáva neurčený.
+Doplňujúcimi príznakmi môžu byť vek míňaného výstupu, podiel
+najväčšieho výstupu na celkovej výstupnej hodnote alebo
+predchádzajúca aktivita adries. Použitie modelu na nových blokoch
+si vyžaduje, aby mali príznaky pri učení aj pri analýze rovnaký
+význam a spôsob výpočtu.
 
-V tejto práci navrhujeme rozšíriť uvedené skupiny o príznaky odvodené z verejných
-blockchainových údajov. Ako kandidátov na zaradenie do vlastného dátového súboru
-volíme vek míňaných výstupov, podiel najväčšieho výstupu na celkovej výstupnej hodnote
-a počet predchádzajúcich transakcií zapojených adries. Vek výstupov vyjadríme počtom blokov
-medzi ich vytvorením a minutím. Týmito príznakmi chceme zachytiť dobu držania prostriedkov,
-rozdelenie prevádzanej hodnoty a predchádzajúcu aktivitu adries.
-
+\begin{samepage}
 \subsection{Obmedzenia dátového súboru}
 \label{sec:elliptic-evaluation}
 
-Audit Šafářa a spoluautorov~\cite{safar2026elliptic}
-odhalil, že adresné štatistiky Elliptic zodpovedajú
-jedinému referenčnému bloku 575~059. Tento blok nasledoval
-až po období zobrazených transakcií. Staršie záznamy tak
-obsahujú aj informácie o neskoršej aktivite adries,
-ako znázorňuje obrázok~\ref{fig:temporal-leakage}.
-Vo vlastnom riešení preto použijeme iba históriu dostupnú
-v zvolenom okamihu vyhodnotenia transakcie.
+Šafář a spoluautori zistili, že adresné štatistiky Elliptic
+vychádzajú z bloku 575~059, ktorý nasledoval po období
+transakcií~\cite{safar2026elliptic}. Staršie záznamy tak obsahujú
+aj neskoršiu aktivitu. Takéto využitie budúcich údajov predstavuje
+časový únik informácií.
+\end{samepage}
 
-\begin{center}
-  \begin{minipage}{\textwidth}
-  \centering
-  \captionsetup{type=figure}
-  \begin{tikzpicture}
-    \node[ellbox,fill=blue!6,text width=43mm,minimum height=15mm]
-      (tr) at (0,0) {Kroky 1--34\\trénovacie transakcie};
-    \node[ellbox,fill=black!4,text width=39mm,minimum height=15mm]
-      (te) at (4.7,0) {Kroky 35--49\\testovacie transakcie};
-    \node[ellbox,fill=red!5,text width=32mm,minimum height=15mm]
-      (f) at (9.4,0) {Blok 575~059\\adresné štatistiky};
-    \draw[ellarrow] (-2.2,-1.2) -- (11.25,-1.2);
-    \node[ellnote] at (2.2,-1.65) {obdobie transakcií Elliptic};
-    \node[ellnote] at (9.4,-1.65) {neskorší referenčný bod};
-    \draw[ellarrow,dashed] (f.north) -- (9.4,1.6)
-      -- (0,1.6) -- (tr.north);
-    \node[ellnote] at (4.7,2.05)
-      {neskoršia aktivita adresy vstupuje do staršieho príznaku};
-  \end{tikzpicture}
-  \caption[Časový únik pri spoločnom referenčnom bloku]{Časový únik
-  pri spoločnom referenčnom bloku. Transakcie sú časovo oddelené,
-  ale ich adresné príznaky vychádzajú z neskoršej histórie.
-  Schéma vyjadruje časové poradie udalostí.
-  Vlastné spracovanie podľa~\cite{safar2026elliptic}.}
-  \label{fig:temporal-leakage}
-  \end{minipage}
-\end{center}
-
-Pri návrhu programu určíme, či budeme transakciu vyhodnocovať
-po potvrdení, alebo pri spätnej analýze s časovým odstupom.
-Podľa tohto rozhodnutia zvolíme rozsah dostupnej histórie.
-Informácie o nasledovníkoch zahrnieme do príznakov až vtedy,
-keď budú príslušné transakcie v sledovanom okamihu známe.
-
-Ďalším obmedzením sú spoločné adresy v rôznych časových krokoch
-(obrázok~\ref{fig:address-leakage}).
-Opakované adresné štatistiky môžu modelu pomôcť rozpoznať
-adresy, ktoré už pozoroval pri učení.
-Vo vlastných experimentoch budeme sledovať výskyt spoločných
-adries v trénovacej a testovacej časti aj v pridaných grafových
-okolách. Tento prekryv zohľadníme pri hodnotení prenosu modelu
-na dovtedy nepozorované adresy.
-
-\begin{center}
-  \begin{minipage}{\textwidth}
-  \centering
-  \captionsetup{type=figure}
-  \begin{tikzpicture}
-    \node[ellbox,fill=blue!6,text width=32mm,minimum height=15mm]
-      (tr) at (0,0) {Transakcia $T_1$\\tréning};
-    \node[ellnode,fill=red!5,minimum size=14mm]
-      (a) at (4.8,0) {adresa $a$};
-    \node[ellbox,fill=black!4,text width=32mm,minimum height=15mm]
-      (te) at (9.6,0) {Transakcia $T_2$\\test};
-    \draw[draw=black!65,line width=0.7pt] (tr.east) -- (a.west);
-    \draw[draw=black!65,line width=0.7pt] (a.east) -- (te.west);
-    \node[ellnote] at (4.8,-1.5)
-      {spoločná adresa prepája príklady aj bez transakčnej hrany};
-  \end{tikzpicture}
-  \caption[Prekryv adries medzi tréningom a testom]{Prekryv adries
-  medzi tréningom a testom. Úsečky označujú účasť adresy
-  v transakcii.
-  Vlastné spracovanie podľa~\cite{safar2026elliptic}.}
-  \label{fig:address-leakage}
-  \end{minipage}
-\end{center}
-
-Pôvodná štandardizácia navyše používa priemery a smerodajné
-odchýlky celého dátového súboru. Kaufman a spoluautori
-aj Kapoor a Narayanan upozorňujú na riziko využívania testovacích
-údajov pri príprave modelu~\cite{kaufman2012leakage,kapoor2023leakage}.
-Parametre predspracovania odhadneme z trénovacej časti
-a v nezmenenej podobe ich použijeme pri spracovaní ostatných
-záznamov. Pri interpretácii výsledkov budeme rozlišovať
-označenie prevzaté z Elliptic a nezávisle doložený kontext
-konkrétnej transakcie. Zverejnené súbory totiž neobsahujú
-podklady, podľa ktorých Elliptic priradil entity
-k jednotlivým transakciám.
-
-\subsection{Východiská vlastného riešenia}
-\label{sec:elliptic-own-approach}
-
-Navrhujeme vytvoriť dátový súbor, v ktorom prepojíme označené
-záznamy Elliptic s overenými bitcoinovými transakciami.
-Z verejných údajov vypočítame zvolené príznaky a zdokumentujeme
-ich význam, jednotku, spôsob výpočtu a rozsah použitej histórie.
-Pôvodnú triedu Elliptic zachováme ako cieľové označenie.
-
-Na pripravených údajoch natrénujeme klasifikačný model.
-Časť označených transakcií vyhradíme na overenie jeho výsledkov.
-Obrázok~\ref{fig:elliptic-own-workflow} oddeľuje učenie
-so známymi triedami od použitia modelu na novú transakciu.
+Pri spätnej analýze sa možno riadiť koncovým blokom skúmaného
+úseku. K vybraným transakciám možno dohľadať starších predchodcov
+a zahrnúť nasledovníkov potvrdených do tejto hranice.
+Obrázok~\ref{fig:temporal-leakage} ju porovnáva s neskorším
+referenčným blokom, z ktorého vychádzajú pôvodné príznaky.
 
 \begin{figure}[htbp]
   \centering
   \begin{tikzpicture}
-    \node[ellnote,font=\small\bfseries] at (4.8,1.65)
-      {A. Príprava dát a učenie modelu};
-    \node[ellbox,fill=blue!6,text width=34mm,minimum height=17mm]
-      (train) at (0,0) {Trénovacie \texttt{txid}\\triedy Elliptic};
-    \node[ellbox,fill=black!4,text width=37mm,minimum height=17mm]
-      (features) at (4.8,0) {Verejné údaje\\výpočet príznakov};
-    \node[ellbox,fill=blue!6,text width=34mm,minimum height=17mm]
-      (fit) at (9.6,0) {Učenie modelu\\príznaky $X$\\triedy $y$};
-    \draw[ellarrow] (train.east) -- node[above,ellnote]
-      {\texttt{txid}} (features.west);
-    \draw[ellarrow] (features.east) -- node[above,ellnote]
-      {$X$} (fit.west);
-    \draw[ellarrow,dashed] (train.north) -- (0,1.05)
-      -- node[above,ellnote] {cieľové triedy $y$} (9.6,1.05) -- (fit.north);
-
-    \node[ellnote,font=\small\bfseries] at (4.8,-1.6)
-      {B. Vyhodnotenie novej transakcie};
-    \node[ellbox,fill=black!4,text width=34mm,minimum height=17mm]
-      (query) at (0,-3.0) {Nové \texttt{txid}\\bez známej triedy};
-    \node[ellbox,fill=black!4,text width=37mm,minimum height=17mm]
-      (queryfeatures) at (4.8,-3.0) {Verejné údaje\\rovnaké príznaky};
-    \node[ellbox,fill=blue!6,text width=34mm,minimum height=17mm]
-      (predict) at (9.6,-3.0) {Použitie modelu\\skóre a trieda};
-    \draw[ellarrow] (query.east) -- node[above,ellnote]
-      {\texttt{txid}} (queryfeatures.west);
-    \draw[ellarrow] (queryfeatures.east) -- node[above,ellnote]
-      {$\mathbf{x}$} (predict.west);
-    \draw[ellarrow,dashed] (fit.south) -- node[right,ellnote,text width=19mm]
-      {uložený model} (predict.north);
+    \fill[blue!5,rounded corners=2pt] (-0.6,-0.2) rectangle (6.7,1.05);
+    \draw[ellarrow] (-0.75,0) -- (11,0) node[right,ellnote] {bloky};
+    \foreach \x in {0,3,6.7,10} {
+      \draw[black!65] (\x,-0.12) -- (\x,0.12);
+    }
+    \node[ellnote] at (0,-0.5) {$T_1$};
+    \node[ellnote] at (3,-0.5) {$T_2$};
+    \node[ellnote,text width=25mm] at (6.7,-0.75)
+      {koniec analýzy\\$h_{\mathrm{koniec}}$};
+    \node[ellnote,text width=28mm] at (10,-0.75)
+      {referenčný blok\\575~059};
+    \draw[blue!65!black,dashed] (6.7,-0.15) -- (6.7,1.25);
+    \node[ellnote,text width=58mm] at (3,0.6)
+      {história dostupná pre výpočet};
+    \draw[ellarrow,dashed,draw=red!55!black]
+      (10,0.2) -- (10,1.9) -- (0,1.9) -- (0,0.2);
+    \node[ellnote,fill=white,inner sep=2pt] at (5,1.9)
+      {neskoršie údaje v pôvodnom príznaku};
   \end{tikzpicture}
-  \caption[Príprava modelu a vyhodnotenie nového txid]{Oddelenie
-  učenia a použitia klasifikačného modelu. Cieľové triedy $y$
-  vstupujú do učenia; nová transakcia sa vyhodnotí pomocou rovnakého
-  výpočtu príznakov a uloženého modelu. Vlastné spracovanie.}
-  \label{fig:elliptic-own-workflow}
+  \caption{Koncový blok analýzy a referenčný blok pôvodných príznakov.}
+  \label{fig:temporal-leakage}
 \end{figure}
 
-Pre použitie modelu navrhujeme program, do ktorého používateľ
-zadá verejné \texttt{txid}. Program získa potrebné údaje,
-zopakuje výpočet príznakov a predspracovanie a použije uložený
-model. Takto budeme vyhodnocovať aj transakcie mimo učebnej
-vzorky, ak budú dostupné všetky požadované vstupy.
-Výstupom bude skóre a predikcia triedy; označenie \emph{illicit}
-budeme interpretovať ako podnet na ďalšie posúdenie.
+Rovnaká adresa sa môže objaviť v rôznych časových krokoch.
+Ak sa vyskytuje v trénovacej aj testovacej časti, model môže pri
+hodnotení ťažiť z už pozorovaných charakteristík. Na
+obrázku~\ref{fig:address-leakage} spájajú úsečky adresy
+s transakciami, v ktorých sa vyskytujú. Pri hodnotení možno osobitne
+posúdiť prípady s adresami známymi z trénovacej časti a prípady
+s novými adresami.
+
+\begin{center}
+  \begin{minipage}{\textwidth}
+  \centering
+  \captionsetup{type=figure}
+  \begin{tikzpicture}[
+    atx/.style={ellbox,minimum width=14mm,minimum height=10mm,
+      inner sep=3pt},
+    adr/.style={ellnode,minimum size=10mm}]
+    \draw[black!40,rounded corners=2pt,fill=blue!4]
+      (-0.9,-2.1) rectangle (2.5,1.3);
+    \draw[black!40,rounded corners=2pt,fill=black!3]
+      (6.5,-2.1) rectangle (9.9,1.3);
+    \node[ellnote,font=\small\bfseries] at (0.8,1.8) {Trénovacia časť};
+    \node[ellnote,font=\small\bfseries] at (8.2,1.8) {Testovacia časť};
+    \node[atx,fill=white] (t1) at (0,0.4) {$T_1$};
+    \node[atx,fill=white] (t2) at (0,-1.1) {$T_2$};
+    \node[adr,fill=white] (b) at (1.7,-1.1) {$b$};
+    \node[adr,fill=red!8] (a) at (4.5,0.4) {$a$};
+    \node[atx,fill=white] (t3) at (9,0.4) {$T_3$};
+    \node[atx,fill=white] (t4) at (9,-1.1) {$T_4$};
+    \node[adr,fill=white] (c) at (7.3,-1.1) {$c$};
+    \foreach \u/\v in {t1/a,a/t3,t2/b,c/t4}
+      \draw[black!65,line width=0.7pt] (\u) -- (\v);
+    \node[ellnote,text width=30mm] at (4.5,-1.05)
+      {adresa $a$ sa objavuje v oboch častiach};
+  \end{tikzpicture}
+  \caption{Spoločná adresa v trénovacej a testovacej časti.}
+  \label{fig:address-leakage}
+  \end{minipage}
+\end{center}
+
+Únik informácií môže vzniknúť aj pri predspracovaní, napríklad
+ak sa priemer príznaku vypočíta zo spoločnej trénovacej a
+testovacej vzorky~\cite{kaufman2012leakage,kapoor2023leakage}.
+Bežným postupom je odvodiť tieto parametre z trénovacej časti
+a použiť ich pri spracovaní ďalších údajov. Pri príznakoch okolia
+má význam odlíšiť skutočnú nulu od chýbajúceho údaja.
+
+Triedy v Elliptic vychádzajú z posúdenia subjektov, ktoré vykonali
+transakcie. Zverejnené súbory poskytujú výsledné označenia a
+príznaky. Model sa učí z týchto označení, preto sa zhoda s nimi dá
+merať na ďalších označených príkladoch. Pri nových blokoch môžu
+predikcie pomôcť vybrať transakcie na bližšie preskúmanie.
+
+\subsection{Navrhované riešenie a očakávaný prínos}
+\label{sec:elliptic-own-approach}
+
+Navrhujeme skript, ktorý načíta transakcie zo zadaného rozsahu
+bitcoinových blokov a použije na ne naučený model. Ako doplnkový
+vstup pripadá do úvahy výber transakcií podľa adries. Údaje o
+blokoch, transakciách a histórii adries možno získať napríklad cez
+rozhranie Blockbook~\cite{trezorBlockbook}.
+
+Šafář porovnával modely na pôvodnej a otvorenej reprezentácii
+transakcií~\cite{safar2025thesis}. Ferretti a spoluautori skúmali
+grafové architektúry a význam príznakov~\cite{ferretti2025aml}.
+Jednou z možností je tabuľkový model, ktorý pracuje s vlastnosťami
+samotnej transakcie. Porovnanie s modelom využívajúcim aj susedov
+môže ukázať, aký prínos má transakčné okolie. Grafový model je
+ďalšou možnosťou, ak má model pracovať priamo s väzbami medzi
+transakciami.
+
+Obrázok~\ref{fig:elliptic-own-workflow} ukazuje spoločnú
+prípravu príznakov pri učení a pri analýze nových blokov.
+
+\begin{center}
+  \begin{minipage}{\textwidth}
+  \centering
+  \captionsetup{type=figure}
+  \begin{tikzpicture}[
+    flowbox/.style={ellbox,text width=34mm,minimum height=20mm}]
+    \node[ellnote,font=\small\bfseries] at (4.8,1.55)
+      {A. Príprava a overenie modelu};
+    \node[flowbox,fill=blue!6] (known) at (0,0)
+      {Overené \texttt{txid}\\označenia Elliptic};
+    \node[flowbox,fill=black!4] (learn) at (4.8,0)
+      {Údaje a príznaky\\učenie, validácia\\a označený test};
+    \node[flowbox,fill=blue!6] (saved) at (9.6,0)
+      {Uložený model\\predspracovanie\\schéma príznakov};
+    \draw[ellarrow] (known) -- (learn);
+    \draw[ellarrow] (learn) -- (saved);
+
+    \node[ellnote,font=\small\bfseries] at (4.8,-1.8)
+      {B. Automatická analýza zadaných blokov};
+    \node[flowbox,fill=black!4] (selection) at (0,-3.3)
+      {Rozsah blokov\\prípadne adresy};
+    \node[flowbox,fill=black!4] (extract) at (4.8,-3.3)
+      {Údaje z blockchainu\\transakcie a okolie\\rovnaké príznaky};
+    \node[flowbox,fill=blue!6] (apply) at (9.6,-3.3)
+      {Načítanie modelu\\predikcie pre cieľové\\transakcie};
+    \draw[ellarrow] (selection) -- (extract);
+    \draw[ellarrow] (extract) -- (apply);
+    \draw[ellarrow,dashed] (saved.south) -- (apply.north);
+    \node[ellbox,fill=black!2,text width=60mm,minimum height=13mm]
+      (result) at (4.8,-5.55)
+      {Výsledky pre vybrané transakcie};
+    \draw[ellarrow] (apply.south) -- (9.6,-5.55) -- (result.east);
+  \end{tikzpicture}
+  \caption{Učenie modelu na označených údajoch a analýza nových blokov.}
+  \label{fig:elliptic-own-workflow}
+  \end{minipage}
+\end{center}
+
+Pri ďalšej analýze možno znova použiť uložený model s rovnakým
+predspracovaním. Výsledok môže mať podobu triedy alebo skóre,
+podľa ktorého možno transakcie zoradiť. Pri výstupe
+v pravdepodobnostnej podobe je vhodné overiť kalibráciu
+na označených príkladoch~\cite{sklearnCalibration}.
+
+Kvalitu klasifikácie možno posúdiť na časovo oddelenej vzorke
+so známymi triedami. Nové bloky sú vhodné na overenie, či skript
+dokáže získať potrebné údaje a vyhodnotiť konkrétne transakcie.
+Takýto výstup môže poslúžiť pri výbere prípadov na podrobnejšiu
+analýzu.
 
 % Dočasne vypnuté kapitoly praktickej časti; na obnovenie odstráňte znak %.
 %\input{includes/chapters/03_safar_tool}

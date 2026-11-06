@@ -25,6 +25,16 @@
 # LaTeX build output
 .build/
 
+# Research inputs, API cache, local environments, and generated result tables
+analysis/.venv/
+analysis/data/raw/
+analysis/data/processed/
+analysis/data/cache/
+analysis/results/
+analysis/__pycache__/
+analysis/**/__pycache__/
+analysis/.pytest_cache/
+
 # macOS
 .DS_Store
 
@@ -32,3 +42,7 @@
 .idea/workspace.xml
 .idea/tasks.xml
 .idea/shelf/
+
+# Local thesis work plans (Ukrainian and Slovak)
+/WORK_PLAN_UK.md
+/WORK_PLAN_SK.md
