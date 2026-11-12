@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bc-thesis-analysis"
+version = "0.1.0"
+description = "Reproducible Elliptic Bitcoin Dataset analysis for the Blockchain analyza bachelor thesis"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+  "numpy>=1.26,<3",
+  "pandas>=2.1,<4",
+  "scikit-learn>=1.4,<2",
+  "matplotlib>=3.8,<4",
+]
+
+[project.optional-dependencies]
+gcn = ["torch>=2.2,<3"]
+dev = ["pytest>=8,<10"]
+
+[project.scripts]
+bc-analysis = "bc_analysis.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["bc_analysis*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

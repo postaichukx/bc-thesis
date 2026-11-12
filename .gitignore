@@ -34,6 +34,7 @@ analysis/results/
 analysis/__pycache__/
 analysis/**/__pycache__/
 analysis/.pytest_cache/
+/analysis/*.egg-info/
 
 # macOS
 .DS_Store
@@ -43,6 +44,14 @@ analysis/.pytest_cache/
 .idea/tasks.xml
 .idea/shelf/
 
+
 # Local thesis work plans (Ukrainian and Slovak)
 /WORK_PLAN_UK.md
 /WORK_PLAN_SK.md
+
+
+/WORKFLOW_UML.puml
+/WORKFLOW_UML.svg
+/WORK_LOG.md
+/memory_codex.md
+
