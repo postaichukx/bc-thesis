@@ -4,14 +4,14 @@ import argparse
 import json
 from pathlib import Path
 
-from .audit import audit_elliptic
+from .kap_03_elliptic.dataset_audit import audit_elliptic
 from .config import DEFAULT_BLOCKBOOK_URL, DEFAULT_SEED
-from .data import collect, prepare
-from .datasets import build_datasets
-from .mapping import evaluate_mapping
-from .models import MODELS, SPLITS, VARIANTS, train_all
-from .reporting import create_report
-from .table_export import export_table
+from .kap_04_blockchain.transaction_collection import collect, prepare
+from .kap_05_experiment.dataset_splits import build_datasets
+from .kap_05_experiment.txid_matching import evaluate_mapping
+from .kap_05_experiment.model_training import MODELS, SPLITS, VARIANTS, train_all
+from .kap_06_vysledky.result_figures import create_report
+from .kap_03_elliptic.feature_table_export import export_table
 
 
 def _csv_tuple(value: str) -> tuple[str, ...]:

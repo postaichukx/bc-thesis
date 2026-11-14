@@ -9,7 +9,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from .config import DEFAULT_USER_AGENT
+from ..config import DEFAULT_USER_AGENT
 
 
 class BlockbookCache:

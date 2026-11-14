@@ -3,7 +3,7 @@ import unittest
 import pandas as pd
 
 from bc_analysis.config import KNOWN_LOCAL_FEATURES
-from bc_analysis.mapping import _holdout_ids, deanonymize_rows, fit_calibrations
+from bc_analysis.kap_05_experiment.txid_matching import _holdout_ids, deanonymize_rows, fit_calibrations
 
 
 class MappingTests(unittest.TestCase):

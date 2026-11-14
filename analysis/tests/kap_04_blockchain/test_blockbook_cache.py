@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from bc_analysis.blockbook import BlockbookCache
+from bc_analysis.kap_04_blockchain.blockbook_client import BlockbookCache
 
 
 class CacheTests(unittest.TestCase):

@@ -5,7 +5,7 @@ from collections.abc import Iterable, Sequence
 
 import numpy as np
 
-from .config import KNOWN_LOCAL_FEATURES
+from ..config import KNOWN_LOCAL_FEATURES
 
 
 def _as_satoshi(value: object) -> int:

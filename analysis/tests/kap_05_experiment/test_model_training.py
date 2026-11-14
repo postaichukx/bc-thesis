@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from bc_analysis.models import _scale_from_training
+from bc_analysis.kap_05_experiment.model_training import _scale_from_training
 
 
 class ModelPreparationTests(unittest.TestCase):

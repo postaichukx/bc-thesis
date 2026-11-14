@@ -6,9 +6,10 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 ANALYSIS_ROOT = PROJECT_ROOT / "analysis"
 DATA_ROOT = ANALYSIS_ROOT / "data"
-PROCESSED_DIR = DATA_ROOT / "processed"
-CACHE_DIR = DATA_ROOT / "cache"
-RESULTS_DIR = ANALYSIS_ROOT / "results"
+BLOCKCHAIN_DATA_DIR = DATA_ROOT / "processed" / "kap_04_blockchain"
+MODEL_DATA_DIR = DATA_ROOT / "processed" / "kap_05_experiment"
+BLOCKCHAIN_CACHE_DIR = DATA_ROOT / "cache" / "kap_04_blockchain"
+EVALUATION_DIR = ANALYSIS_ROOT / "results" / "kap_06_vysledky"
 THESIS_FIGURES_DIR = PROJECT_ROOT / "FEIstyle_v2-0-1" / "img" / "generated"
 
 SELECTED_TIMESTEPS = (20, 29, 30, 32, 35, 42)
@@ -75,5 +76,5 @@ MATCHING_STAGES = {
 
 
 def ensure_runtime_directories() -> None:
-    for path in (PROCESSED_DIR, CACHE_DIR, RESULTS_DIR):
+    for path in (BLOCKCHAIN_DATA_DIR, MODEL_DATA_DIR, BLOCKCHAIN_CACHE_DIR, EVALUATION_DIR):
         path.mkdir(parents=True, exist_ok=True)

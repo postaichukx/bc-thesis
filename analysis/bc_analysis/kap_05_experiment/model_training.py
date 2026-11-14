@@ -19,15 +19,15 @@ from sklearn.metrics import (
 )
 from sklearn.preprocessing import StandardScaler
 
-from .config import (
+from ..config import (
     KNOWN_LOCAL_FEATURES,
     MODEL_SEEDS,
-    PROCESSED_DIR,
-    RESULTS_DIR,
+    MODEL_DATA_DIR,
+    EVALUATION_DIR,
     ensure_runtime_directories,
 )
-from .datasets import filter_edges_for_split
-from .data import update_manifest
+from ..kap_05_experiment.dataset_splits import filter_edges_for_split
+from ..kap_04_blockchain.transaction_collection import update_manifest
 
 
 VARIANTS = {
@@ -89,7 +89,7 @@ def _metrics(labels: np.ndarray, probabilities: np.ndarray, threshold: float) ->
 
 
 def _prepare_data(feature_kind: str, graph_kind: str, split_column: str) -> PreparedData:
-    nodes_path = PROCESSED_DIR / "model_nodes.csv.gz"
+    nodes_path = MODEL_DATA_DIR / "model_nodes.csv.gz"
     if not nodes_path.exists():
         raise FileNotFoundError("Run build-datasets before train")
     nodes = pd.read_csv(nodes_path)
@@ -104,7 +104,7 @@ def _prepare_data(feature_kind: str, graph_kind: str, split_column: str) -> Prep
         nodes = nodes[nodes[split_column] != "dropped"].copy()
     nodes = nodes.reset_index(drop=True)
 
-    edge_path = PROCESSED_DIR / f"model_{graph_kind}_edges.csv.gz"
+    edge_path = MODEL_DATA_DIR / f"model_{graph_kind}_edges.csv.gz"
     edges = pd.read_csv(edge_path)
     edges = filter_edges_for_split(edges, nodes, split_column)
 
@@ -350,8 +350,8 @@ def train_all(
                     )
 
     results = pd.DataFrame(rows)
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    results.to_csv(RESULTS_DIR / "model_runs.csv", index=False)
+    EVALUATION_DIR.mkdir(parents=True, exist_ok=True)
+    results.to_csv(EVALUATION_DIR / "model_runs.csv", index=False)
     metric_columns = [
         "illicit_f1",
         "illicit_precision",
@@ -367,7 +367,7 @@ def train_all(
         "_".join(column).rstrip("_") if isinstance(column, tuple) else column
         for column in summary.columns
     ]
-    summary.to_csv(RESULTS_DIR / "model_summary.csv", index=False)
+    summary.to_csv(EVALUATION_DIR / "model_summary.csv", index=False)
     result = {
         "configurations": int(results.groupby(["variant", "split", "model"]).ngroups),
         "runs": len(results),

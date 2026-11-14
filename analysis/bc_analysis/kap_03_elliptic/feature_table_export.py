@@ -6,8 +6,8 @@ import tempfile
 from collections import Counter
 from pathlib import Path
 
-from .audit import LABELS, TARGETS
-from .data import CLASSES_FILE, FEATURES_FILE, sha256_file
+from ..kap_03_elliptic.dataset_audit import LABELS, TARGETS
+from ..kap_04_blockchain.transaction_collection import CLASSES_FILE, FEATURES_FILE, sha256_file
 
 
 SEMANTICS_URL = "https://github.com/nesfit/DeanonymizedEllipticBitcoinDataset/blob/a5dbbcc655783003d942d0d54ad8404f0b7b3b93/README.md"

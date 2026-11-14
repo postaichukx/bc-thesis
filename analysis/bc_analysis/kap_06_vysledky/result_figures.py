@@ -8,7 +8,13 @@ import pandas as pd
 from matplotlib.collections import LineCollection
 from matplotlib.lines import Line2D
 
-from .config import PROCESSED_DIR, RESULTS_DIR, THESIS_FIGURES_DIR, ensure_runtime_directories
+from ..config import (
+    BLOCKCHAIN_DATA_DIR,
+    EVALUATION_DIR,
+    MODEL_DATA_DIR,
+    THESIS_FIGURES_DIR,
+    ensure_runtime_directories,
+)
 
 
 COLORS = {"licit": "#377eb8", "illicit": "#e41a1c", "unknown": "#a6a6a6"}
@@ -22,8 +28,8 @@ def _save(figure: plt.Figure, name: str) -> None:
 
 
 def _class_distribution() -> None:
-    features = pd.read_csv(PROCESSED_DIR / "selected_features.csv.gz", usecols=["txId", "timestep"])
-    classes = pd.read_csv(PROCESSED_DIR / "selected_classes.csv.gz")
+    features = pd.read_csv(BLOCKCHAIN_DATA_DIR / "selected_features.csv.gz", usecols=["txId", "timestep"])
+    classes = pd.read_csv(BLOCKCHAIN_DATA_DIR / "selected_classes.csv.gz")
     frame = features.merge(classes, on="txId", how="left")
     frame["class"] = frame["class"].fillna("unknown").astype(str)
     frame["class"] = frame["class"].replace({"1": "illicit", "2": "licit"})
@@ -103,10 +109,10 @@ def _topological_layout(node_ids: np.ndarray, edges: pd.DataFrame) -> dict[int, 
 def _graph_overview() -> None:
     """Render every selected Elliptic component using its real nodes and edges."""
     nodes = pd.read_csv(
-        PROCESSED_DIR / "model_nodes.csv.gz",
+        MODEL_DATA_DIR / "model_nodes.csv.gz",
         usecols=["txId", "timestep", "label"],
     )
-    edges = pd.read_csv(PROCESSED_DIR / "model_original_edges.csv.gz")
+    edges = pd.read_csv(MODEL_DATA_DIR / "model_original_edges.csv.gz")
     steps = sorted(int(value) for value in nodes["timestep"].unique())
 
     figure, axes = plt.subplots(2, 3, figsize=(10.4, 7.4), constrained_layout=True)
@@ -193,7 +199,7 @@ def _mapping_accuracy(path: Path) -> None:
 
 def _split_retention() -> None:
     nodes = pd.read_csv(
-        PROCESSED_DIR / "model_nodes.csv.gz",
+        MODEL_DATA_DIR / "model_nodes.csv.gz",
         usecols=["split_temporal", "split_clean"],
     )
     order = ["train", "validation", "test"]
@@ -309,20 +315,20 @@ def create_report() -> dict[str, bool]:
         "mapping": False,
         "models": False,
     }
-    if (PROCESSED_DIR / "selected_features.csv.gz").exists():
+    if (BLOCKCHAIN_DATA_DIR / "selected_features.csv.gz").exists():
         _class_distribution()
         generated["class_distribution"] = True
-    if (PROCESSED_DIR / "model_nodes.csv.gz").exists():
+    if (MODEL_DATA_DIR / "model_nodes.csv.gz").exists():
         _split_retention()
-        if (PROCESSED_DIR / "model_original_edges.csv.gz").exists():
+        if (MODEL_DATA_DIR / "model_original_edges.csv.gz").exists():
             _graph_overview()
             generated["graph_overview"] = True
         generated["split_retention"] = True
-    mapping_path = RESULTS_DIR / "mapping_holdout_summary.csv"
+    mapping_path = EVALUATION_DIR / "mapping_holdout_summary.csv"
     if mapping_path.exists():
         _mapping_accuracy(mapping_path)
         generated["mapping"] = True
-    models_path = RESULTS_DIR / "model_runs.csv"
+    models_path = EVALUATION_DIR / "model_runs.csv"
     if models_path.exists():
         _model_comparison(models_path)
         _metric_profile(models_path)

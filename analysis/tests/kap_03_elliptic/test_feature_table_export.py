@@ -3,9 +3,9 @@ import json
 
 import pytest
 
-from bc_analysis.audit import audit_elliptic
-from bc_analysis.data import CLASSES_FILE, EDGES_FILE, FEATURES_FILE
-from bc_analysis.table_export import column_dictionary, export_table
+from bc_analysis.kap_03_elliptic.dataset_audit import audit_elliptic
+from bc_analysis.kap_04_blockchain.transaction_collection import CLASSES_FILE, EDGES_FILE, FEATURES_FILE
+from bc_analysis.kap_03_elliptic.feature_table_export import column_dictionary, export_table
 
 
 def test_dictionary_preserves_all_positions_and_uncertainty():

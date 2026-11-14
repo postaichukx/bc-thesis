@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from bc_analysis.datasets import _clean_split, filter_edges_for_split
+from bc_analysis.kap_05_experiment.dataset_splits import _clean_split, filter_edges_for_split
 
 
 class SplitTests(unittest.TestCase):

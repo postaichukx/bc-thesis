@@ -6,9 +6,6 @@
     - [Changelog](#changelog)
 - [Usage](#usage)
 - [Compile chain](#compile-chain)
-  - [Manual compiling](#manual-compiling)
-  - [Using *latexmk*](#using-latexmk)
-  - [Using Makefile (uses *latexmk*)](#using-makefile-uses-latexmk)
   - [Sublime-text 3 project file](#sublime-text-3-project-file)
 - [Hints and trics](#hints-and-trics)
   - [Counting words, lines and characters](#counting-words-lines-and-characters)
@@ -44,52 +41,20 @@ Change-log is located [here](CHANGELOG.md).
 
 # Compile chain
 
-In following sub-chapters `thesis` is your main `thesis.tex` (in root folder).
+From the WebStorm Terminal, run this from the `bc-thesis` directory:
 
-## Manual compiling
-
-Following chain should output `thesis.pdf`
-
-```
-$ pdflatex thesis
-$ biber thesis
-$ makeglossaries thesis
-$ pdflatex thesis
-$ pdflatex thesis #not a typo!
+```sh
+make -C FEIstyle_v2-0-1 pdf
 ```
 
-## Using *latexmk*
->**Note**: see [Hints and Trics](https://github.com/Kyslik/FEIStyle#hints-and-trics) section to get information on how to install **letexmk**
+From `FEIstyle_v2-0-1`, you can also run `latexmk -pdf thesis.tex`.
+Both commands update `thesis.pdf` beside `thesis.tex`. The repository's `out/latex/`
+directory holds intermediate files, including the build log and bibliography
+files. `make clean` clears temporary files for `thesis.tex` and `make refresh`
+clears them and rebuilds the PDF.
 
-Following command runs necessary compile chain.
-
-```
-$ latexmk -pdf -synctex=1 -interaction=nonstopmode -silent thesis
-```
-
-## Using Makefile (uses *latexmk*)
-
->**Note**: make sure to change file-name in Makefile on line [#2](https://github.com/Kyslik/FEIStyle/blob/master/Makefile#L2)
-
-Build in `.build` folder
-
-```
-$ make
-```
-
-Clean `.build` folder and delete PDF file in parent folder
-
-```
-$ make clean
-```
-
-Combine two commands above
-
-```
-$ make refresh
-```
-
-Read more on how to be even more efficient with [latexmk && make](https://drewsilcock.co.uk/using-make-and-latexmk).
+Edit the main text in `includes/core.tex`. In WebStorm, use the Structure
+window beside the editor to jump between sections and subsections.
 
 ## Sublime-text 3 project file
 Repository consists of ST3 project file which includes building your PDF using `SUPER+b`.

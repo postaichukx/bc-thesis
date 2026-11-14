@@ -7,17 +7,17 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .config import (
+from ..config import (
     DEFAULT_SEED,
     HOLDOUT_FRACTION,
     KNOWN_LOCAL_FEATURES,
     MATCHING_STAGES,
-    PROCESSED_DIR,
-    RESULTS_DIR,
+    BLOCKCHAIN_DATA_DIR,
+    EVALUATION_DIR,
     SELECTED_TIMESTEPS,
     ensure_runtime_directories,
 )
-from .data import update_manifest
+from ..kap_04_blockchain.transaction_collection import update_manifest
 
 
 INTEGER_FEATURES = {
@@ -133,9 +133,9 @@ def _rank_candidates(
 def evaluate_mapping(seed: int = DEFAULT_SEED, top_k: int = 5) -> dict[str, object]:
     ensure_runtime_directories()
     required = {
-        "features": PROCESSED_DIR / "selected_features.csv.gz",
-        "mapping": PROCESSED_DIR / "selected_mapping.csv.gz",
-        "candidates": PROCESSED_DIR / "block_candidates.csv.gz",
+        "features": BLOCKCHAIN_DATA_DIR / "selected_features.csv.gz",
+        "mapping": BLOCKCHAIN_DATA_DIR / "selected_mapping.csv.gz",
+        "candidates": BLOCKCHAIN_DATA_DIR / "block_candidates.csv.gz",
     }
     missing = [str(path) for path in required.values() if not path.exists()]
     if missing:
@@ -249,10 +249,10 @@ def evaluate_mapping(seed: int = DEFAULT_SEED, top_k: int = 5) -> dict[str, obje
             }
         )
 
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(detail_rows).to_csv(RESULTS_DIR / "mapping_holdout_details.csv", index=False)
-    pd.DataFrame(summaries).to_csv(RESULTS_DIR / "mapping_holdout_summary.csv", index=False)
-    pd.DataFrame(unmapped_rows).to_csv(RESULTS_DIR / "unmapped_candidates.csv", index=False)
+    EVALUATION_DIR.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(detail_rows).to_csv(EVALUATION_DIR / "mapping_holdout_details.csv", index=False)
+    pd.DataFrame(summaries).to_csv(EVALUATION_DIR / "mapping_holdout_summary.csv", index=False)
+    pd.DataFrame(unmapped_rows).to_csv(EVALUATION_DIR / "unmapped_candidates.csv", index=False)
     calibration_json = {
         name: {
             "slope": value.slope,
@@ -261,7 +261,7 @@ def evaluate_mapping(seed: int = DEFAULT_SEED, top_k: int = 5) -> dict[str, obje
         }
         for name, value in calibrations.items()
     }
-    (RESULTS_DIR / "mapping_calibration.json").write_text(
+    (EVALUATION_DIR / "mapping_calibration.json").write_text(
         json.dumps(calibration_json, indent=2), encoding="utf-8"
     )
     result = {

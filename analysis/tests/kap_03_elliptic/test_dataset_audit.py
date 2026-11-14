@@ -4,8 +4,8 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from bc_analysis.audit import audit_elliptic
-from bc_analysis.data import CLASSES_FILE, EDGES_FILE, FEATURES_FILE, sha256_file
+from bc_analysis.kap_03_elliptic.dataset_audit import audit_elliptic
+from bc_analysis.kap_04_blockchain.transaction_collection import CLASSES_FILE, EDGES_FILE, FEATURES_FILE, sha256_file
 
 
 def raw_files(directory: Path):

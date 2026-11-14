@@ -1,7 +1,7 @@
 import math
 import unittest
 
-from bc_analysis.features import _as_satoshi, reconstruct_edges, transaction_features
+from bc_analysis.kap_04_blockchain.transaction_features import _as_satoshi, reconstruct_edges, transaction_features
 
 
 class TransactionFeatureTests(unittest.TestCase):

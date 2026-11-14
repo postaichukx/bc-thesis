@@ -11,19 +11,19 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import __version__
-from .blockbook import BlockbookCache, BlockbookClient, fetch_transactions
-from .config import (
+from .. import __version__
+from ..kap_04_blockchain.blockbook_client import BlockbookCache, BlockbookClient, fetch_transactions
+from ..config import (
     BLOCK_RANGES,
-    CACHE_DIR,
+    BLOCKCHAIN_CACHE_DIR,
     DEFAULT_BLOCKBOOK_URL,
     DEFAULT_SEED,
-    PROCESSED_DIR,
+    BLOCKCHAIN_DATA_DIR,
     SELECTED_TIMESTEPS,
     TIMESTEP_SPLIT,
     ensure_runtime_directories,
 )
-from .features import transaction_features
+from ..kap_04_blockchain.transaction_features import transaction_features
 
 
 FEATURES_FILE = "elliptic_txs_features.csv"
@@ -51,7 +51,7 @@ def _package_version(name: str) -> str | None:
 
 
 def update_manifest(payload: dict[str, object]) -> Path:
-    path = PROCESSED_DIR / "manifest.json"
+    path = BLOCKCHAIN_DATA_DIR / "manifest.json"
     if path.exists():
         manifest = json.loads(path.read_text(encoding="utf-8"))
     else:
@@ -125,10 +125,10 @@ def prepare(elliptic_dir: Path, mapping_path: Path) -> dict[str, int]:
         edges["txId1"].isin(selected_ids) & edges["txId2"].isin(selected_ids)
     ].copy()
 
-    features.to_csv(PROCESSED_DIR / "selected_features.csv.gz", index=False)
-    classes.to_csv(PROCESSED_DIR / "selected_classes.csv.gz", index=False)
-    mapping.to_csv(PROCESSED_DIR / "selected_mapping.csv.gz", index=False)
-    edges.to_csv(PROCESSED_DIR / "selected_original_edges.csv.gz", index=False)
+    features.to_csv(BLOCKCHAIN_DATA_DIR / "selected_features.csv.gz", index=False)
+    classes.to_csv(BLOCKCHAIN_DATA_DIR / "selected_classes.csv.gz", index=False)
+    mapping.to_csv(BLOCKCHAIN_DATA_DIR / "selected_mapping.csv.gz", index=False)
+    edges.to_csv(BLOCKCHAIN_DATA_DIR / "selected_original_edges.csv.gz", index=False)
 
     merged = features[["txId", "timestep"]].merge(classes, on="txId", how="left")
     merged["class"] = merged["class"].fillna("unknown").astype(str)
@@ -164,7 +164,7 @@ def prepare(elliptic_dir: Path, mapping_path: Path) -> dict[str, int]:
 
 
 def _client(base_url: str) -> BlockbookClient:
-    cache = BlockbookCache(CACHE_DIR / "blockbook.sqlite3")
+    cache = BlockbookCache(BLOCKCHAIN_CACHE_DIR / "blockbook.sqlite3")
     return BlockbookClient(base_url=base_url, cache=cache)
 
 
@@ -181,7 +181,7 @@ def collect(
     failures: list[tuple[str, str]] = []
 
     if mode == "selected":
-        mapping_path = PROCESSED_DIR / "selected_mapping.csv.gz"
+        mapping_path = BLOCKCHAIN_DATA_DIR / "selected_mapping.csv.gz"
         if not mapping_path.exists():
             raise FileNotFoundError("Run prepare before collect")
         mapping = pd.read_csv(mapping_path)
@@ -190,7 +190,7 @@ def collect(
             txids = txids[:limit]
         fetched, failures = fetch_transactions(client, txids, workers=workers)
         timestep_by_hash = dict(zip(mapping["txid"], mapping["txId"], strict=False))
-        features = pd.read_csv(PROCESSED_DIR / "selected_features.csv.gz", usecols=["txId", "timestep"])
+        features = pd.read_csv(BLOCKCHAIN_DATA_DIR / "selected_features.csv.gz", usecols=["txId", "timestep"])
         step_by_id = dict(zip(features["txId"], features["timestep"], strict=False))
         for tx in fetched:
             txid = str(tx.get("txid") or "")
@@ -227,13 +227,13 @@ def collect(
         row["timestep"] = int(transaction.get("_timestep") or 0)
         rows.append(row)
 
-    output = PROCESSED_DIR / (
+    output = BLOCKCHAIN_DATA_DIR / (
         "block_candidates.csv.gz" if mode == "blocks" else "selected_transactions.csv.gz"
     )
     pd.DataFrame(rows).to_csv(output, index=False)
     if failures:
         pd.DataFrame(failures, columns=["item", "error"]).to_csv(
-            PROCESSED_DIR / f"collect_{mode}_failures.csv", index=False
+            BLOCKCHAIN_DATA_DIR / f"collect_{mode}_failures.csv", index=False
         )
     result = {"transactions": len(rows), "failures": len(failures)}
     update_manifest(

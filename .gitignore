@@ -11,10 +11,16 @@
 *.bbl
 *.blg
 *.bcf
+*.bbl-SAVE-ERROR
+*.bcf-SAVE-ERROR
 *.run.xml
 *.nav
 *.snm
 *.vrb
+*.acn
+*.acr
+*.alg
+*.glg
 *.glo
 *.gls
 *.ist
@@ -24,6 +30,7 @@
 
 # LaTeX build output
 .build/
+/out/
 
 # Research inputs, API cache, local environments, and generated result tables
 analysis/.venv/

@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .data import CLASSES_FILE, EDGES_FILE, FEATURES_FILE, _feature_columns, sha256_file
+from ..kap_04_blockchain.transaction_collection import CLASSES_FILE, EDGES_FILE, FEATURES_FILE, _feature_columns, sha256_file
 
 
 LABELS = {"1": "illicit", "2": "licit", "unknown": "unknown"}

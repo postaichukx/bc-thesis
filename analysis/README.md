@@ -16,6 +16,21 @@ python3.12 -m venv .venv
 .venv/bin/python -m pip install -e '.[gcn,dev]'
 ```
 
+## Kde nájsť jednotlivé časti
+
+Čísla priečinkov sledujú poradie kapitol v práci. Čísla 04–06
+vychádzajú z poradia pracovných kapitol v `includes/core.tex`.
+
+| Kapitola | Priečinok v `bc_analysis/` | Hlavné súbory |
+| --- | --- | --- |
+| 3. Elliptic a klasifikácia transakcií | `kap_03_elliptic/` | `dataset_audit.py` kontroluje vstupné CSV. `feature_table_export.py` vytvára tabuľku a slovník príznakov. |
+| 4. Nástroj BitcoinTxSubgraphBuilder a údaje blockchainu | `kap_04_blockchain/` | `blockbook_client.py` obsluhuje API a cache. `transaction_collection.py` vyberá vzorku a získava transakcie. `transaction_features.py` počíta príznaky. |
+| 5. Návrh reprodukovateľného experimentu | `kap_05_experiment/` | `txid_matching.py` overuje párovanie. `dataset_splits.py` pripravuje varianty dát a rozdelenia. `model_training.py` trénuje a hodnotí modely. |
+| 6. Overenie dát a vyhodnotenie | `kap_06_vysledky/` | `result_figures.py` tvorí obrázky zo zozbieraných údajov a výsledkov. |
+
+Testy sú v `tests/` pod rovnakými názvami kapitol. Spoločný vstupný bod
+`bc_analysis/cli.py` spúšťa príkazy uvedené nižšie.
+
 ## Vstupné súbory
 
 ### Audit pôvodných údajov (bod 1.2)
@@ -25,8 +40,8 @@ server. Z koreňa projektu ho spustíme takto:
 
 ```bash
 analysis/.venv/bin/python -m bc_analysis audit \
-  --elliptic-dir analysis/data/raw/stage_1_2_elliptic \
-  --output-dir analysis/data/processed/stage_1_2_elliptic_audit
+  --elliptic-dir analysis/data/raw/kap_03_elliptic/originalne_csv \
+  --output-dir analysis/data/processed/kap_03_elliptic/audit_dat
 ```
 
 Vznikne `audit.json` s pôvodom údajov, SHA-256, počtami a kontrolami
@@ -64,17 +79,13 @@ a neexistujúce konce hrán sa v týchto vstupoch nevyskytli.
 Tento krok overuje štruktúru a úplnosť dodaných súborov. Nepotvrdzuje
 vecnú správnosť označení a ešte nevytvára mapovanie na blockchain.
 
-`analysis/` obsahuje aj starší kód ďalších etáp. Názov celého balíka preto
-ponechávame. Nové pracovné adresáre označujeme etapou plánu, napríklad
-`stage_1_2_elliptic` a `stage_1_2_elliptic_audit`.
-
 #### Úplná tabuľka a slovník stĺpcov
 
 ```bash
 analysis/.venv/bin/python -m bc_analysis export-table \
-  --elliptic-dir analysis/data/raw/stage_1_2_elliptic \
-  --audit-dir analysis/data/processed/stage_1_2_elliptic_audit \
-  --output-dir analysis/data/processed/stage_1_2_elliptic_tables
+  --elliptic-dir analysis/data/raw/kap_03_elliptic/originalne_csv \
+  --audit-dir analysis/data/processed/kap_03_elliptic/audit_dat \
+  --output-dir analysis/data/processed/kap_03_elliptic/tabulky_priznakov
 ```
 
 Export najprv porovná SHA-256 vstupov s úspešným auditom. Vytvorí
@@ -178,7 +189,11 @@ bc-analysis report
 
 Všetky príkazy majú prepínač `--help`. Predvolený Blockbook server možno
 zmeniť argumentom `--base-url`. Zber je obnoviteľný: každá úspešná odpoveď
-sa uloží do `analysis/data/cache/blockbook.sqlite3`.
+sa uloží do `analysis/data/cache/kap_04_blockchain/blockbook.sqlite3`.
+
+Spracované transakcie a manifest sú v `data/processed/kap_04_blockchain/`.
+Dáta pre modely sú v `data/processed/kap_05_experiment/`. Tabuľky metrík
+a párovania sú v `results/kap_06_vysledky/`.
 
 ## Reprodukovateľnosť a interpretácia
 

@@ -4,14 +4,20 @@ from pathlib import Path
 
 import pandas as pd
 
-from .config import KNOWN_LOCAL_FEATURES, PROCESSED_DIR, TIMESTEP_SPLIT, ensure_runtime_directories
-from .data import update_manifest
-from .features import reconstruct_edges, split_addresses
+from ..config import (
+    BLOCKCHAIN_DATA_DIR,
+    KNOWN_LOCAL_FEATURES,
+    MODEL_DATA_DIR,
+    TIMESTEP_SPLIT,
+    ensure_runtime_directories,
+)
+from ..kap_04_blockchain.transaction_collection import update_manifest
+from ..kap_04_blockchain.transaction_features import reconstruct_edges, split_addresses
 
 
 def _load_collected() -> pd.DataFrame:
-    selected = PROCESSED_DIR / "selected_transactions.csv.gz"
-    blocks = PROCESSED_DIR / "block_candidates.csv.gz"
+    selected = BLOCKCHAIN_DATA_DIR / "selected_transactions.csv.gz"
+    blocks = BLOCKCHAIN_DATA_DIR / "block_candidates.csv.gz"
     if blocks.exists():
         return pd.read_csv(blocks)
     if selected.exists():
@@ -55,10 +61,10 @@ def _clean_split(nodes: pd.DataFrame) -> pd.Series:
 def build_datasets() -> dict[str, int]:
     ensure_runtime_directories()
     required = {
-        "features": PROCESSED_DIR / "selected_features.csv.gz",
-        "classes": PROCESSED_DIR / "selected_classes.csv.gz",
-        "mapping": PROCESSED_DIR / "selected_mapping.csv.gz",
-        "edges": PROCESSED_DIR / "selected_original_edges.csv.gz",
+        "features": BLOCKCHAIN_DATA_DIR / "selected_features.csv.gz",
+        "classes": BLOCKCHAIN_DATA_DIR / "selected_classes.csv.gz",
+        "mapping": BLOCKCHAIN_DATA_DIR / "selected_mapping.csv.gz",
+        "edges": BLOCKCHAIN_DATA_DIR / "selected_original_edges.csv.gz",
     }
     missing = [str(path) for path in required.values() if not path.exists()]
     if missing:
@@ -102,10 +108,10 @@ def build_datasets() -> dict[str, int]:
     )
     reconstructed_edges = pd.DataFrame(sorted(reconstructed), columns=["txId1", "txId2"])
 
-    nodes.to_csv(PROCESSED_DIR / "model_nodes.csv.gz", index=False)
-    original_edges.to_csv(PROCESSED_DIR / "model_original_edges.csv.gz", index=False)
+    nodes.to_csv(MODEL_DATA_DIR / "model_nodes.csv.gz", index=False)
+    original_edges.to_csv(MODEL_DATA_DIR / "model_original_edges.csv.gz", index=False)
     reconstructed_edges.to_csv(
-        PROCESSED_DIR / "model_reconstructed_edges.csv.gz", index=False
+        MODEL_DATA_DIR / "model_reconstructed_edges.csv.gz", index=False
     )
 
     clean_counts = nodes["split_clean"].value_counts().to_dict()
