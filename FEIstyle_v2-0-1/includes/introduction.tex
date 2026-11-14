@@ -1,0 +1,20 @@
+Verejný bitcoinový blockchain umožňuje sledovať nadväzujúce
+transakcie od vytvorenia výstupu až po jeho minutie. Na posúdenie
+súvislosti s podvodom alebo praním špinavých peňazí treba tento záznam
+doplniť o informácie o účastníkoch a okolnostiach prevodu. Dátový
+súbor Elliptic obsahuje príklady, pri ktorých autori takéto informácie
+použili na označenie triedy~\cite{weber2019elliptic}.
+
+Cieľom práce je navrhnúť a overiť postup, ktorý využije označené
+transakcie Elliptic na učenie modelu a následne ho použije na
+transakcie zo zadaného rozsahu bitcoinových blokov. Pri prenose
+modelu je dôležité, aby sa jeho vstupy dali vypočítať z verejných
+záznamov rovnakým spôsobom ako pri učení. Zameriame sa preto
+na prepojenie záznamov s blockchainom, výpočet spoločných príznakov
+a výber údajov dostupných k určenému koncovému bloku.
+
+Prvá kapitola vysvetľuje, ako z bitcoinových transakcií vzniká graf.
+Druhá kapitola opisuje, ktoré stopy zanechávajú vybrané nelegálne
+aktivity a ako ich možno interpretovať. Tretia kapitola predstavuje
+Elliptic a odvodzuje podmienky, za ktorých sa dá na jeho označeniach
+učiť model na analýzu ďalších blokov.
